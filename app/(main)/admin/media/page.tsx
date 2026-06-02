@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FolderUp, Copy, Check, FileAudio, FileImage, Loader2 } from "lucide-react";
+import { FolderUp, Copy, Check, FileAudio, FileImage, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MediaFile {
   url: string;
   name: string;
   isImage: boolean;
+  type?: string;
 }
 
 export default function MediaManagerPage() {
@@ -84,7 +85,7 @@ export default function MediaManagerPage() {
               Gestor de Archivos
             </h1>
             <p className="text-muted-foreground font-medium mt-1">
-              Sube audios, banderas o imágenes para usarlos en tus cursos y lecciones.
+              Sube audios, PDFs o imágenes. Se guardan en la nube permanentemente.
             </p>
           </div>
         </div>
@@ -100,7 +101,7 @@ export default function MediaManagerPage() {
           </Button>
           <input
             type="file"
-            accept="image/*,audio/*"
+            accept="image/*,audio/*,application/pdf"
             disabled={isUploading}
             onChange={handleUpload}
             className="absolute inset-0 opacity-0 cursor-pointer z-20"
@@ -127,8 +128,10 @@ export default function MediaManagerPage() {
                 <div className="h-32 w-full bg-slate-50 dark:bg-background/50 flex items-center justify-center relative p-4">
                   {file.isImage ? (
                     <img src={file.url} alt={file.name} className="w-full h-full object-contain drop-shadow-md" />
+                  ) : file.type === "documento" ? (
+                    <FileText className="w-16 h-16 text-rose-300" />
                   ) : (
-                    <FileAudio className="w-16 h-16 text-slate-300" />
+                    <FileAudio className="w-16 h-16 text-blue-300" />
                   )}
                   
                   {/* Overlay on hover */}
@@ -151,7 +154,7 @@ export default function MediaManagerPage() {
                     {file.name}
                   </p>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1 font-bold">
-                    {file.isImage ? "Imagen" : "Audio"}
+                    {file.isImage ? "Imagen" : file.type === "documento" ? "PDF" : "Audio"}
                   </p>
                 </div>
               </div>

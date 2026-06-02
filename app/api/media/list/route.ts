@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { promises as fs } from "fs";
-import path from "path";
+import cloudinary from "@/lib/cloudinary";
 
 export async function GET() {
   try {
@@ -10,30 +9,48 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const mediaDir = path.join(process.cwd(), "public", "media");
-    
-    try {
-      await fs.access(mediaDir);
-    } catch {
-      // Si no existe el directorio, devolvemos un array vacío
-      return NextResponse.json({ files: [] });
-    }
+    // Fetch all resources from the rutacachimbo folder
+    const [images, videos, raws] = await Promise.all([
+      cloudinary.api.resources({
+        type: "upload",
+        prefix: "rutacachimbo",
+        resource_type: "image",
+        max_results: 100,
+      }).catch(() => ({ resources: [] })),
+      cloudinary.api.resources({
+        type: "upload",
+        prefix: "rutacachimbo",
+        resource_type: "video",
+        max_results: 100,
+      }).catch(() => ({ resources: [] })),
+      cloudinary.api.resources({
+        type: "upload",
+        prefix: "rutacachimbo",
+        resource_type: "raw",
+        max_results: 100,
+      }).catch(() => ({ resources: [] })),
+    ]);
 
-    const files = await fs.readdir(mediaDir);
-    // Filtrar archivos ocultos y mapear con su URL y tipo
-    const mediaFiles = files
-      .filter(f => !f.startsWith("."))
-      .map(filename => ({
-        url: `/media/${filename}`,
-        name: filename,
-        isImage: filename.match(/\.(jpeg|jpg|gif|png|svg|webp)$/i) != null,
+    const allResources = [
+      ...images.resources.map((r: any) => ({ ...r, _type: "image" })),
+      ...videos.resources.map((r: any) => ({ ...r, _type: "audio" })),
+      ...raws.resources.map((r: any) => ({ ...r, _type: "documento" })),
+    ];
+
+    const mediaFiles = allResources
+      .map((r: any) => ({
+        url: r.secure_url,
+        name: r.public_id.replace("rutacachimbo/", ""),
+        isImage: r._type === "image",
+        type: r._type,
+        size: r.bytes,
+        createdAt: r.created_at,
       }))
-      // Sort by newest first since filename starts with timestamp
-      .sort((a, b) => b.name.localeCompare(a.name));
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ files: mediaFiles });
   } catch (error) {
     console.error("List media error:", error);
-    return NextResponse.json({ error: "Failed to list files" }, { status: 500 });
+    return NextResponse.json({ files: [] });
   }
 }

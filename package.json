@@ -26,6 +26,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "ai": "^6.0.194",
     "class-variance-authority": "^0.7.0",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.1",
