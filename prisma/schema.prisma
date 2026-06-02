@@ -1,0 +1,301 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ChallengeType {
+  SELECT
+  ASSIST
+
+  @@map("type")
+}
+
+enum League {
+  BRONCE
+  PLATA
+  ORO
+  DIAMANTE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Classroom {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  teacherId   String            @map("teacher_id")
+  inviteCode  String            @unique @map("invite_code")
+  members     ClassroomMember[]
+  courses     Course[]
+
+  @@map("classrooms")
+}
+
+model ClassroomMember {
+  id          Int       @id @default(autoincrement())
+  classroomId Int       @map("classroom_id")
+  userId      String    @map("user_id")
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@map("classroom_members")
+}
+
+model Course {
+  id           Int            @id @default(autoincrement())
+  title        String
+  imageSrc     String         @map("image_src")
+  classroomId  Int?           @map("classroom_id")
+  classroom    Classroom?     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  userProgress UserProgress[]
+  units        Unit[]
+
+  @@map("courses")
+}
+
+model Unit {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  courseId    Int      @map("course_id")
+  order       Int
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@map("units")
+}
+
+model Lesson {
+  id            Int         @id @default(autoincrement())
+  title         String
+  unitId        Int         @map("unit_id")
+  order         Int
+  referenceText String?     @map("reference_text")
+  unit          Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  challenges    Challenge[]
+
+  @@map("lessons")
+}
+
+model Challenge {
+  id                Int                 @id @default(autoincrement())
+  lessonId          Int                 @map("lesson_id")
+  type              ChallengeType
+  question          String
+  order             Int
+  lesson            Lesson              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  challengeOptions  ChallengeOption[]
+  challengeProgress ChallengeProgress[]
+
+  @@map("challenges")
+}
+
+model ChallengeOption {
+  id          Int       @id @default(autoincrement())
+  challengeId Int       @map("challenge_id")
+  text        String
+  correct     Boolean
+  imageSrc    String?   @map("image_src")
+  audioSrc    String?   @map("audio_src")
+  explanation String?
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("challenge_options")
+}
+
+model ChallengeProgress {
+  id          Int       @id @default(autoincrement())
+  userId      String    @map("user_id")
+  challengeId Int       @map("challenge_id")
+  completed   Boolean   @default(false)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("challenge_progress")
+}
+
+model UserProgress {
+  userId             String               @id @map("user_id")
+  userName           String               @default("User") @map("user_name")
+  userImageSrc       String               @default("/mascot.svg") @map("user_image_src")
+  activeCourseId     Int?                 @map("active_course_id")
+  hearts             Int                  @default(5)
+  points             Int                  @default(0)
+  isTeacher          Boolean              @default(false) @map("is_teacher")
+  league             League               @default(BRONCE)
+  weeklyPoints       Int                  @default(0) @map("weekly_points")
+  activeBorder       String?              @map("active_border")
+  activeCourse       Course?              @relation(fields: [activeCourseId], references: [id], onDelete: Cascade)
+  teacherApplications TeacherApplication[]
+
+  streakFreeze       Boolean              @default(false) @map("streak_freeze")
+  xpBoosterEndsAt    DateTime?            @map("xp_booster_ends_at")
+  ownedBorders       String[]             @default([]) @map("owned_borders")
+  streak             Int?                 @default(0)
+  lastActive         DateTime?            @default(now()) @map("last_active")
+  unlockedAchievements String[]           @default([]) @map("unlocked_achievements")
+  factionId          Int?                 @map("faction_id")
+  faction            Faction?             @relation(fields: [factionId], references: [id])
+  factionJoinedAt    DateTime?            @map("faction_joined_at")
+
+  @@map("user_progress")
+}
+
+model TeacherApplication {
+  id          Int               @id @default(autoincrement())
+  userId      String            @map("user_id")
+  proofUrl    String            @map("proof_url")
+  description String?
+  status      ApplicationStatus @default(PENDING)
+  user        UserProgress      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("teacher_applications")
+}
+
+model UserSubscription {
+  id                     Int      @id @default(autoincrement())
+  userId                 String   @unique @map("user_id")
+  stripeCustomerId       String   @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String   @unique @map("stripe_subscription_id")
+  stripePriceId          String   @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime @map("stripe_current_period_end")
+
+  @@map("user_subscription")
+}
+
+model PdfDocument {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pdf_documents")
+}
+
+model MockExamResult {
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  score      Float
+  correct    Int
+  incorrect  Int
+  blank      Int
+  timeSpent  Int      @map("time_spent")
+  aiFeedback String?  @map("ai_feedback")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("mock_exam_results")
+}
+
+model PvpMatch {
+  id                    Int      @id @default(autoincrement())
+  code                  String   @unique
+  status                String   @default("NEGOTIATING")
+  player1Id             String   @map("player1_id")
+  player2Id             String?  @map("player2_id")
+  currentTurnId         String?  @map("current_turn_id")
+  currentQuestionIndex  Int      @default(0) @map("current_question_index")
+  questions             Json?
+  player1Score          Int      @default(0) @map("player1_score")
+  player2Score          Int      @default(0) @map("player2_score")
+  wagerPoints           Int      @default(0) @map("wager_points")
+  p1WagerProposal       Int?     @map("p1_wager_proposal")
+  p2WagerProposal       Int?     @map("p2_wager_proposal")
+  p1Ready               Boolean  @default(false) @map("p1_ready")
+  p2Ready               Boolean  @default(false) @map("p2_ready")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@map("pvp_matches")
+}
+
+model MistakeLog {
+  id                Int      @id @default(autoincrement())
+  userId            String   @map("user_id")
+  context           String   
+  questionText      String   @map("question_text")
+  wrongAnswerText   String   @map("wrong_answer_text")
+  correctAnswerText String?  @map("correct_answer_text")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("mistake_logs")
+}
+
+model Faction {
+  id          Int            @id @default(autoincrement())
+  name        String         @unique
+  description String
+  logoSrc     String         @map("logo_src")
+  totalXp     Int            @default(0) @map("total_xp")
+  members     UserProgress[]
+  tournamentParticipants TournamentParticipant[]
+
+  @@map("factions")
+}
+
+enum ChestType {
+  COMUN
+  RARO
+  EPICO
+  @@map("chest_type")
+}
+
+model UserChest {
+  id          Int        @id @default(autoincrement())
+  userId      String     @map("user_id")
+  type        ChestType
+  opened      Boolean    @default(false)
+  rewardType  String?    @map("reward_type")
+  rewardValue String?    @map("reward_value")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  @@map("user_chests")
+}
+
+model LiveTournament {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String?
+  startTime        DateTime @map("start_time")
+  toleranceMinutes Int      @default(15) @map("tolerance_minutes")
+  roundDuration    Int      @default(180) @map("round_duration")
+  intermissionTime Int      @default(15) @map("intermission_time")
+  status           String   @default("PENDING") // PENDING, ACTIVE, FINISHED
+  
+  questions        TournamentQuestion[]
+  participants     TournamentParticipant[]
+
+  @@map("live_tournaments")
+}
+
+model TournamentQuestion {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int      @map("tournament_id")
+  tournament   LiveTournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  order        Int
+  readingText  String   @map("reading_text")
+  questionText String   @map("question_text")
+  options      String[] 
+  correctIndex Int      @map("correct_index")
+  basePoints   Int      @default(100) @map("base_points")
+
+  @@map("tournament_questions")
+}
+
+model TournamentParticipant {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int      @map("tournament_id")
+  tournament   LiveTournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String   @map("user_id")
+  factionId    Int      @map("faction_id")
+  faction      Faction  @relation(fields: [factionId], references: [id])
+  score        Int      @default(0)
+  answers      Json?    // Array of { questionId, selectedIndex, timeTaken, pointsEarned }
+  joinedAt     DateTime @default(now()) @map("joined_at")
+
+  @@map("tournament_participants")
+}
