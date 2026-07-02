@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import cloudinary from "@/lib/cloudinary";
+import { isAdminId } from "@/lib/admin";
 
 export async function GET() {
   try {
     const { userId } = auth();
-    if (!userId || userId !== process.env.ADMIN_USER_ID) {
+    if (!isAdminId(userId)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

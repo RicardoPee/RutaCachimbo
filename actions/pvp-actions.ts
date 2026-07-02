@@ -1,9 +1,11 @@
 "use server";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { PvpStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logMistake } from "@/actions/mistakes";
 import { getMockExamQuestions } from "./mock-exam-actions";
 import { pusherServer } from "@/lib/pusher";
+import { PVP_POINTS_PER_CORRECT, PVP_NEGOTIATION_TIMEOUT_MS } from "@/constants";
 
 const triggerMatchUpdate = async (matchId: number) => {
   if (pusherServer) {
@@ -73,7 +75,7 @@ export async function getMatchState(matchId: number) {
   // Timer: 10 minute logic during NEGOTIATING phase
   if (match.status === "NEGOTIATING") {
     const elapsed = Date.now() - new Date(match.createdAt).getTime();
-    if (elapsed > 10 * 60 * 1000) {
+    if (elapsed > PVP_NEGOTIATION_TIMEOUT_MS) {
       await prisma.pvpMatch.update({ where: { id: matchId }, data: { status: "FINISHED" } });
       return { error: "Tiempo de negociación agotado (10 minutos). La sala se cerró para evitar bugs." };
     }
@@ -149,7 +151,7 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
   let nextQIndex = match.currentQuestionIndex;
 
   if (isCorrect) {
-    if (isP1) newScore1 += 10; else newScore2 += 10;
+    if (isP1) newScore1 += PVP_POINTS_PER_CORRECT; else newScore2 += PVP_POINTS_PER_CORRECT;
     nextQIndex++;
     // Keeps turn! (Combo Infinito)
   } else {
@@ -159,79 +161,43 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
     logMistake("PVP", currentQ.question, currentQ.options[answerIndex]?.text || "", correctOpt?.text);
   }
 
-  let status = match.status;
-  if (nextQIndex >= questions.length) {
-    status = "FINISHED";
-    
-    // Distribute wager points based on winner
-    let p1FinalScore = newScore1;
-    let p2FinalScore = newScore2;
+  const finished = nextQIndex >= questions.length;
+  const status: PvpStatus = finished ? PvpStatus.FINISHED : match.status;
+
+  // Actualización atómica: estado del match + reparto de la apuesta (si terminó)
+  const operations: any[] = [
+    prisma.pvpMatch.update({
+      where: { id: matchId },
+      data: {
+        player1Score: newScore1,
+        player2Score: newScore2,
+        currentTurnId: nextTurn,
+        currentQuestionIndex: nextQIndex,
+        status,
+      },
+    }),
+  ];
+
+  if (finished) {
     const wager = match.wagerPoints || 0;
-    
-    if (newScore1 > newScore2) {
-       p1FinalScore += wager;
-       p2FinalScore -= wager;
-    } else if (newScore2 > newScore1) {
-       p2FinalScore += wager;
-       p1FinalScore -= wager;
+    const winnerId = newScore1 > newScore2 ? match.player1Id : newScore2 > newScore1 ? match.player2Id : null;
+    const loserId = winnerId === match.player1Id ? match.player2Id : winnerId === match.player2Id ? match.player1Id : null;
+
+    if (wager > 0 && winnerId && loserId) {
+      operations.push(
+        prisma.userProgress.updateMany({
+          where: { userId: winnerId },
+          data: { points: { increment: wager }, weeklyPoints: { increment: wager } },
+        }),
+        prisma.userProgress.updateMany({
+          where: { userId: loserId },
+          data: { points: { decrement: wager } },
+        }),
+      );
     }
-    // Update global points logic would go here
   }
 
-  await prisma.pvpMatch.update({
-    where: { id: matchId },
-    data: {
-      player1Score: newScore1,
-      player2Score: newScore2,
-      currentTurnId: nextTurn,
-      currentQuestionIndex: nextQIndex,
-      status
-    }
-  });
+  await prisma.$transaction(operations);
   await triggerMatchUpdate(matchId);
   return { success: true, isCorrect, nextTurn };
-}
-
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-
-export async function simplifyReferenceText(text: string) {
-  const { userId } = auth();
-  if (!userId) return { error: "No autorizado" };
-
-  try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${process.env.GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Eres un tutor experto. Toma el siguiente texto de comprensión lectora, que proviene de un PDF y puede contener URLs, metadatos y falta de saltos de línea.
-Tu objetivo es:
-1. Eliminar URLs, links inútiles y basura.
-2. Dividirlo en párrafos legibles con dobles saltos de línea.
-3. Hacerlo limpio y profesional para un alumno de pre o universidad.
-Devuelve SOLO el texto limpio, sin comentarios tuyos.
-
-Texto original:
-${text}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.2
-        }
-      })
-    });
-
-    if (!response.ok) {
-      return { error: "Error al contactar a la IA" };
-    }
-
-    const data = await response.json();
-    const cleanText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!cleanText) return { error: "No se pudo limpiar el texto" };
-
-    return { success: true, cleanText };
-  } catch (e) {
-    return { error: "Error procesando el texto con IA" };
-  }
 }

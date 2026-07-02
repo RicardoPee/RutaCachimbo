@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
-import { auth } from "@clerk/nextjs";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { auth } from "@clerk/nextjs/server";
+import cloudinary from "@/lib/cloudinary";
 
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
@@ -158,6 +157,14 @@ export const parsePdfWithAI = async (formData: FormData) => {
   const { userId } = auth();
   if (!userId) return { error: "No autorizado." };
 
+  // Solo administradores y profesores pueden usar el análisis con IA (es costoso)
+  if (!isAdmin()) {
+    const progress = await prisma.userProgress.findUnique({ where: { userId } });
+    if (!progress?.isTeacher) {
+      return { error: "Solo administradores y profesores pueden subir PDFs." };
+    }
+  }
+
   const file = formData.get("pdf") as File | null;
   if (!file) return { error: "No se proporcionó ningún archivo." };
   if (file.size > 50 * 1024 * 1024) return { error: "El PDF supera el límite de 50MB." };
@@ -166,16 +173,23 @@ export const parsePdfWithAI = async (formData: FormData) => {
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64Pdf = buffer.toString("base64");
 
-    // SAVE FILE LOCALLY
-    const publicPdfDir = path.join(process.cwd(), "public", "uploads", "pdf");
-    await mkdir(publicPdfDir, { recursive: true });
-    
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g, "_");
-    const uniqueFileName = `${Date.now()}-${safeName}`;
-    const filePath = path.join(publicPdfDir, uniqueFileName);
-    
-    await writeFile(filePath, buffer);
-    const pdfUrl = `/uploads/pdf/${uniqueFileName}`;
+    // Subir el PDF a Cloudinary (el filesystem de Vercel es de solo lectura)
+    let pdfUrl: string | null = null;
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-]/g, "_");
+      const uploadResult = await cloudinary.uploader.upload(
+        `data:application/pdf;base64,${base64Pdf}`,
+        {
+          folder: "rutacachimbo/pdf",
+          resource_type: "raw",
+          public_id: `${Date.now()}-${safeName}`,
+        }
+      );
+      pdfUrl = uploadResult.secure_url;
+    } catch (uploadError) {
+      console.error("[Cloudinary upload]", uploadError);
+      // No bloquear el análisis con IA si falla el almacenamiento del archivo
+    }
 
     const result = await callGeminiWithRetry(base64Pdf);
     

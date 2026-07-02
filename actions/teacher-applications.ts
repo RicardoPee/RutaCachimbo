@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { teacherApplications, userProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 
 export const submitTeacherApplication = async (proofUrl: string, description: string) => {
@@ -14,8 +12,8 @@ export const submitTeacherApplication = async (proofUrl: string, description: st
     throw new Error("No estás autenticado.");
   }
 
-  const existingApplication = await db.query.teacherApplications.findFirst({
-    where: eq(teacherApplications.userId, userId),
+  const existingApplication = await prisma.teacherApplication.findFirst({
+    where: { userId },
   });
 
   if (existingApplication && existingApplication.status === "PENDING") {
@@ -28,16 +26,13 @@ export const submitTeacherApplication = async (proofUrl: string, description: st
 
   if (existingApplication && existingApplication.status === "REJECTED") {
     // Si fue rechazada, puede volver a intentar actualizando la URL
-    await db.update(teacherApplications).set({
-      proofUrl,
-      description,
-      status: "PENDING",
-    }).where(eq(teacherApplications.id, existingApplication.id));
+    await prisma.teacherApplication.update({
+      where: { id: existingApplication.id },
+      data: { proofUrl, description, status: "PENDING" },
+    });
   } else {
-    await db.insert(teacherApplications).values({
-      userId,
-      proofUrl,
-      description,
+    await prisma.teacherApplication.create({
+      data: { userId, proofUrl, description },
     });
   }
 
@@ -50,13 +45,16 @@ export const approveApplication = async (applicationId: number, userId: string) 
     return { error: "No autorizado" };
   }
 
-  await db.update(teacherApplications)
-    .set({ status: "APPROVED" })
-    .where(eq(teacherApplications.id, applicationId));
-
-  await db.update(userProgress)
-    .set({ isTeacher: true })
-    .where(eq(userProgress.userId, userId));
+  await prisma.$transaction([
+    prisma.teacherApplication.update({
+      where: { id: applicationId },
+      data: { status: "APPROVED" },
+    }),
+    prisma.userProgress.update({
+      where: { userId },
+      data: { isTeacher: true },
+    }),
+  ]);
 
   revalidatePath("/admin-panel/teachers");
   return { success: true };
@@ -67,9 +65,10 @@ export const rejectApplication = async (applicationId: number) => {
     return { error: "No autorizado" };
   }
 
-  await db.update(teacherApplications)
-    .set({ status: "REJECTED" })
-    .where(eq(teacherApplications.id, applicationId));
+  await prisma.teacherApplication.update({
+    where: { id: applicationId },
+    data: { status: "REJECTED" },
+  });
 
   revalidatePath("/admin-panel/teachers");
   return { success: true };

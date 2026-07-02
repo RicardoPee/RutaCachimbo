@@ -1,63 +1,50 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
-import { logMistake } from "@/actions/mistakes";
+import { z } from "zod";
+import { generateObject, generateText } from "ai";
+import { google } from "@ai-sdk/google";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import db from "@/db/drizzle";
-import { userProgress } from "@/db/schema";
-import { getUserProgress } from "@/db/queries";
-import { eq } from "drizzle-orm";
-import { calculateNewStreak } from "@/lib/streak";
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+import { prisma } from "@/lib/prisma";
+import { logMistake } from "@/actions/mistakes";
+import { getUserProgress } from "@/db/queries";
+import { calculateNewStreak } from "@/lib/streak";
+import {
+  AI_MODEL,
+  POINTS_PER_MOCK_EXAM,
+  MOCK_EXAM_POINTS_CORRECT,
+  MOCK_EXAM_PENALTY_INCORRECT,
+} from "@/constants";
+
+const MockExamSchema = z.object({
+  questions: z.array(z.object({
+    referenceText: z.string().describe("Texto de lectura o contexto del problema."),
+    question: z.string().describe("Pregunta específica sobre el texto."),
+    difficulty: z.string().describe("Nivel de dificultad, ej. 'Difícil'."),
+    options: z.array(z.object({
+      text: z.string(),
+      correct: z.boolean(),
+    })).length(4).describe("Exactamente 4 alternativas, solo 1 correcta."),
+  })).length(10),
+});
 
 async function generateMockExamWithAI(universityId?: string) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-
-  const prompt = `Actúa como un catedrático experto en elaboración de exámenes de admisión para universidades prestigiosas (estilo DECO - Destrezas Cognitivas).
-Genera exactamente 10 preguntas de opción múltiple de alto nivel (Historia, Geografía, Literatura, Matemáticas, Ciencias, etc.).
-Cada pregunta debe tener un texto de referencia (contexto, problema o lectura) y 4 alternativas.
-
-Retorna SOLO un arreglo JSON estricto con el siguiente formato, sin markdown extra:
-[
-  {
-    "referenceText": "Texto de lectura o contexto del problema...",
-    "question": "Pregunta específica sobre el texto...",
-    "difficulty": "Difícil",
-    "options": [
-      { "text": "Alternativa A", "correct": true },
-      { "text": "Alternativa B", "correct": false },
-      { "text": "Alternativa C", "correct": false },
-      { "text": "Alternativa D", "correct": false }
-    ]
-  }
-]`;
-
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 4000 }
-      })
+    const { object } = await generateObject({
+      model: google(AI_MODEL),
+      schema: MockExamSchema,
+      prompt: `Actúa como un catedrático experto en elaboración de exámenes de admisión para universidades prestigiosas (estilo DECO - Destrezas Cognitivas).
+Genera exactamente 10 preguntas de opción múltiple de alto nivel (Historia, Geografía, Literatura, Matemáticas, Ciencias, etc.).
+Cada pregunta debe tener un texto de referencia (contexto, problema o lectura) y 4 alternativas donde solo 1 es correcta.`,
     });
 
-    const data = await res.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-    
-    const parsed = JSON.parse(text);
-
     let fakeIdCounter = 90000;
-    const questions = parsed.map((item: any) => {
+    return object.questions.map((item) => {
       const qId = fakeIdCounter++;
       // Shuffle options to prevent correct always being first if AI generated it that way
       const shuffledOptions = [...item.options].sort(() => 0.5 - Math.random());
-      
+
       return {
         id: qId,
         question: item.question,
@@ -65,18 +52,16 @@ Retorna SOLO un arreglo JSON estricto con el siguiente formato, sin markdown ext
         referenceText: item.referenceText,
         lessonTitle: "Simulacro IA en Tiempo Real",
         difficulty: item.difficulty || "DECO Avanzado",
-        challengeOptions: shuffledOptions.map((opt: any) => ({
+        challengeOptions: shuffledOptions.map((opt) => ({
           id: fakeIdCounter++,
           challengeId: qId,
           text: opt.text,
           correct: opt.correct,
           imageSrc: null,
-          audioSrc: null
-        }))
+          audioSrc: null,
+        })),
       };
     });
-
-    return questions;
   } catch (e) {
     console.error("Error generating mock exam:", e);
     return null;
@@ -96,27 +81,25 @@ export async function getMockExamQuestions(universityId?: string) {
             lessons: {
               include: {
                 challenges: {
-                  include: { challengeOptions: true }
-                }
-              }
-            }
-          }
-        }
-      }
+                  include: { challengeOptions: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
-
-    // if (!globalCourse) return { error: "No hay simulacros disponibles. Pide al administrador que suba PDFs." }; // Reemplazado por fallback IA
 
     let allChallenges: any[] = [];
     if (globalCourse) {
-      globalCourse.units.forEach(unit => {
-        unit.lessons.forEach(lesson => {
-          lesson.challenges.forEach(challenge => {
+      globalCourse.units.forEach((unit) => {
+        unit.lessons.forEach((lesson) => {
+          lesson.challenges.forEach((challenge) => {
             allChallenges.push({
               ...challenge,
               referenceText: lesson.referenceText,
               lessonTitle: lesson.title,
-              difficulty: unit.title
+              difficulty: unit.title,
             });
           });
         });
@@ -168,16 +151,16 @@ export async function submitMockExam(payload: { answers: Record<number, number |
           question: q.question,
           difficulty: q.difficulty,
           wrongAnswer: wrongAnswerText,
-          correctAnswer: correctOption?.text
+          correctAnswer: correctOption?.text,
         });
-        
+
         // Log the mistake for the AI Tutor seamlessly
         await logMistake("MOCK_EXAM", q.question, wrongAnswerText, correctOption?.text);
       }
     }
 
     // Puntuación estilo UNMSM: +20 correcta, -1.125 incorrecta, 0 en blanco
-    let score = (correct * 20) - (incorrect * 1.125);
+    let score = (correct * MOCK_EXAM_POINTS_CORRECT) - (incorrect * MOCK_EXAM_PENALTY_INCORRECT);
     if (score < 0) score = 0;
 
     let aiFeedback = "¡Excelente esfuerzo! Has completado el simulacro.";
@@ -193,24 +176,27 @@ export async function submitMockExam(payload: { answers: Record<number, number |
         incorrect,
         blank,
         timeSpent,
-        aiFeedback
-      }
+        aiFeedback,
+      },
     });
 
     const currentUserProgress = await getUserProgress();
     if (currentUserProgress) {
       const { newStreak, usedFreeze, newLastActive } = calculateNewStreak(
-        currentUserProgress.streak, 
-        currentUserProgress.lastActive, 
+        currentUserProgress.streak,
+        currentUserProgress.lastActive,
         currentUserProgress.streakFreeze
       );
-      await db.update(userProgress).set({
-        points: currentUserProgress.points + 20,
-        weeklyPoints: currentUserProgress.weeklyPoints + 20,
-        streak: newStreak,
-        lastActive: newLastActive,
-        ...(usedFreeze ? { streakFreeze: false } : {})
-      }).where(eq(userProgress.userId, userId));
+      await prisma.userProgress.update({
+        where: { userId },
+        data: {
+          points: currentUserProgress.points + POINTS_PER_MOCK_EXAM,
+          weeklyPoints: currentUserProgress.weeklyPoints + POINTS_PER_MOCK_EXAM,
+          streak: newStreak,
+          lastActive: newLastActive,
+          ...(usedFreeze ? { streakFreeze: false } : {}),
+        },
+      });
     }
 
     revalidatePath("/simulacros");
@@ -222,9 +208,6 @@ export async function submitMockExam(payload: { answers: Record<number, number |
 }
 
 async function generateAIFeedback(errors: any[], correct: number, incorrect: number, blank: number, universityId?: string) {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) return "Feedback IA no disponible (Falta API Key).";
-
   let uniContext = "un examen de admisión universitario general";
   if (universityId?.includes("uni")) uniContext = "el examen de la UNI (altamente competitivo, donde las blancas no restan tanto pero requieren extrema velocidad)";
   if (universityId?.includes("sm")) uniContext = "el examen de San Marcos (Decano de América, enfocado en preguntas tipo DECO y análisis complejo)";
@@ -243,15 +226,11 @@ Escribe un reporte de retroalimentación de 2 párrafos cortos (sin usar viñeta
 `;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+    const { text } = await generateText({
+      model: google(AI_MODEL),
+      prompt,
     });
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sigue practicando, vas por buen camino.";
+    return text || "Sigue practicando, vas por buen camino.";
   } catch (e) {
     return "Error al conectar con la IA para tu feedback.";
   }

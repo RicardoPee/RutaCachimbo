@@ -1,19 +1,17 @@
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { userProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 import { UserProfileMenuClient } from "./user-profile-menu-client";
 import { isAdmin } from "@/lib/admin";
 
 export const UserProfileMenu = async () => {
   const { userId } = auth();
-  
+
   if (!userId) {
     return null;
   }
 
-  const progress = await db.query.userProgress.findFirst({
-    where: eq(userProgress.userId, userId),
+  const progress = await prisma.userProgress.findUnique({
+    where: { userId },
   });
 
   const isUserAdmin = isAdmin();

@@ -1,13 +1,13 @@
 "use server";
 
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { isAdminId } from "@/lib/admin";
 
 export const createWarEvent = async (data: any) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     const tournament = await prisma.liveTournament.create({
@@ -306,9 +306,8 @@ export const submitTournamentAnswer = async (tournamentId: number, questionId: n
 };
 
 export const publishTournamentResults = async (tournamentId: number) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     await prisma.liveTournament.update({
@@ -322,7 +321,7 @@ export const publishTournamentResults = async (tournamentId: number) => {
   }
 };
 
-import { clerkClient } from "@clerk/nextjs";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export const getTournamentLeaderboard = async (tournamentId: number) => {
   const participants = await prisma.tournamentParticipant.findMany({
@@ -338,7 +337,7 @@ export const getTournamentLeaderboard = async (tournamentId: number) => {
 
   // Obtener los datos reales de los usuarios desde Clerk
   const userIds = participants.map(p => p.userId);
-  const clerkUsers = await clerkClient.users.getUserList({ userId: userIds });
+  const { data: clerkUsers } = await clerkClient.users.getUserList({ userId: userIds });
 
   // Mapear los datos de Clerk con los participantes
   const enrichedParticipants = participants.map(p => {

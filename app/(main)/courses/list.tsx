@@ -4,14 +4,14 @@ import { toast } from "sonner";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { courses, userProgress } from "@/db/schema";
+import type { Course, UserProgress } from "@prisma/client";
 import { upsertUserProgress } from "@/actions/user-progress";
 
 import { Card } from "./card";
 
 type Props = {
-  courses: typeof courses.$inferSelect[];
-  activeCourseId?: typeof userProgress.$inferSelect.activeCourseId;
+  courses: Course[];
+  activeCourseId?: UserProgress["activeCourseId"];
 };
 
 export const List = ({ courses, activeCourseId }: Props) => {

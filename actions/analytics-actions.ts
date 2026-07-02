@@ -1,8 +1,9 @@
 "use server";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
 import { prisma } from "@/lib/prisma";
-
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+import { AI_MODEL } from "@/constants";
 
 export async function generateMedicalDiagnosis() {
   const { userId } = auth();
@@ -30,15 +31,11 @@ Tu tono debe ser profesional, clínico y un poco estricto.
 `;
 
   try {
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    const { text } = await generateText({
+      model: google(AI_MODEL),
+      prompt,
     });
-    const data = await response.json();
-    const diagnosis = data.candidates?.[0]?.content?.parts?.[0]?.text || "El Doctor IA está fuera de servicio.";
-    return { diagnosis };
+    return { diagnosis: text || "El Doctor IA está fuera de servicio." };
   } catch (error) {
     return { error: "Error de conexión con el Hospital IA." };
   }

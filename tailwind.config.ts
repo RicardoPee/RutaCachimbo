@@ -19,6 +19,7 @@ const config = {
     },
     extend: {
       fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         cinzel: ["var(--font-cinzel)", "serif"],
         bebas: ["var(--font-bebas)", "sans-serif"],
       },

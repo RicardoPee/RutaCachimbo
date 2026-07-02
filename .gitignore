@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Visual Studio
+.vs/
+
+# uploads locales (los archivos van a Cloudinary)
+/public/uploads/
+
+# permitir el ejemplo de variables de entorno
+!.env.example

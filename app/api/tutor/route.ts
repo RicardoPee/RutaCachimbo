@@ -1,50 +1,66 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { userProgress, mistakeLogs } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+
+import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { AI_MODEL } from "@/constants";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+const TutorRequestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string().max(10_000),
+  })).min(1).max(100),
+});
 
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
+
+    if (!userId) {
+      return new NextResponse("No autorizado", { status: 401 });
+    }
+
+    const { success } = rateLimit(`tutor:${userId}`, { limit: 10, windowMs: 60_000 });
+    if (!success) {
+      return new NextResponse("Demasiadas solicitudes. Espera un momento.", { status: 429 });
+    }
+
+    const parsed = TutorRequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new NextResponse("Solicitud inválida", { status: 400 });
+    }
+
     let studentName = "Estudiante";
     let studentHearts = 5;
-    let studentPoints = 0;
-
     let studentLeague = "BRONCE";
 
-    if (userId) {
-      const progress = await db.query.userProgress.findFirst({
-        where: eq(userProgress.userId, userId),
-      });
-      if (progress) {
-        studentName = progress.userName || "Estudiante";
-        studentHearts = progress.hearts;
-        studentPoints = progress.points;
-        studentLeague = progress.league || "BRONCE";
-      }
+    const progress = await prisma.userProgress.findUnique({
+      where: { userId },
+    });
+    if (progress) {
+      studentName = progress.userName || "Estudiante";
+      studentHearts = progress.hearts;
+      studentLeague = progress.league || "BRONCE";
     }
 
     let mistakesHistory = "";
-    if (userId) {
-      try {
-        const logs = await db.query.mistakeLogs.findMany({
-          where: eq(mistakeLogs.userId, userId),
-          orderBy: [desc(mistakeLogs.createdAt)],
-          limit: 5,
-        });
-        if (logs && logs.length > 0) {
-          mistakesHistory = "\nHISTORIAL DE ERRORES RECIENTES DEL ALUMNO (Úsalos para personalizar tu tutoría o plantearle retos similares):\n" +
-            logs.map((log, i) => `Error ${i + 1} (${log.context}):\n- Pregunta fallada: "${log.questionText}"\n- Respuesta que marcó (incorrecta): "${log.wrongAnswerText}"\n- Respuesta real (correcta): "${log.correctAnswerText || 'N/A'}"`).join("\n\n");
-        }
-      } catch (e) { console.error("Could not fetch mistake logs", e); }
-    }
-
-    const { messages } = await req.json();
+    try {
+      const logs = await prisma.mistakeLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+      if (logs.length > 0) {
+        mistakesHistory = "\nHISTORIAL DE ERRORES RECIENTES DEL ALUMNO (Úsalos para personalizar tu tutoría o plantearle retos similares):\n" +
+          logs.map((log, i) => `Error ${i + 1} (${log.context}):\n- Pregunta fallada: "${log.questionText}"\n- Respuesta que marcó (incorrecta): "${log.wrongAnswerText}"\n- Respuesta real (correcta): "${log.correctAnswerText || 'N/A'}"`).join("\n\n");
+      }
+    } catch (e) { console.error("Could not fetch mistake logs", e); }
 
     let pedagogicalInstruction = "";
     if (studentLeague === "BRONCE" || studentLeague === "PLATA") {
@@ -68,10 +84,10 @@ REGLAS DE CONDUCTA PEDAGÓGICA:
 ${mistakesHistory}
 `;
 
-    const result = await streamText({
-      model: google("gemini-2.5-flash"),
+    const result = streamText({
+      model: google(AI_MODEL),
       system: systemPrompt,
-      messages,
+      messages: parsed.data.messages,
     });
 
     return result.toTextStreamResponse();

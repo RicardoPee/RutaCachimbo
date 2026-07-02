@@ -1,18 +1,18 @@
 "use server";
 
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
+import { isAdminId } from "@/lib/admin";
 
 // Initialize Google AI with the env key
 // The @ai-sdk/google automatically uses GOOGLE_GENERATIVE_AI_API_KEY from environment
 
 export const generateTournamentDraft = async (title: string, description: string, count: number) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     // 1. Fetch all available readings with their questions
@@ -87,9 +87,8 @@ export const generateTournamentDraft = async (title: string, description: string
 };
 
 export const getReplacementLesson = async (currentDraftIds: number[], title: string, description: string) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return null;
+    const { userId } = auth();
+  if (!isAdminId(userId)) return null;
 
   const allLessons = await prisma.lesson.findMany({
     where: {

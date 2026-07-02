@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { FactionsClient } from "./factions-client";
 import { syncTournaments } from "@/actions/tournament-actions";
+import { isAdminId } from "@/lib/admin";
 
 export default async function FactionsPage() {
   const { userId } = auth();
@@ -42,8 +43,7 @@ export default async function FactionsPage() {
 
   const registeredTournamentIds = userRegistrations.map(r => r.tournamentId);
 
-  const adminId = process.env.ADMIN_USER_ID;
-  const isAdmin = userId === adminId;
+    const isAdmin = isAdminId(userId);
 
   return (
     <div className="w-full flex justify-center min-h-screen bg-slate-50 dark:bg-background pb-20">

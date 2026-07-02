@@ -65,7 +65,7 @@ export const TeacherAdminClient = ({ applications }: { applications: any[] }) =>
                 </div>
                 {app.description && (
                   <p className="mt-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg italic">
-                    "{app.description}"
+                    &ldquo;{app.description}&rdquo;
                   </p>
                 )}
               </div>

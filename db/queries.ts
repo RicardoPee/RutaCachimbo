@@ -1,35 +1,25 @@
 import { cache } from "react";
-import { eq, or, isNull, inArray, desc } from "drizzle-orm";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
-import db from "@/db/drizzle";
-import { 
-  challengeProgress,
-  courses, 
-  lessons, 
-  units, 
-  userProgress,
-  userSubscription,
-  classroomMembers
-} from "@/db/schema";
+import { prisma } from "@/lib/prisma";
+import { isAdminId } from "@/lib/admin";
 
 export const getUserProgress = cache(async () => {
-  // BYPASS AUTH FOR LOCAL DEV:
-  const { userId: clerkUserId } = auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
 
   if (!userId) {
     return null;
   }
 
-  const data = await db.query.userProgress.findFirst({
-    where: eq(userProgress.userId, userId),
-    with: {
+  const data = await prisma.userProgress.findUnique({
+    where: { userId },
+    include: {
       activeCourse: true,
     },
   });
 
-  if (data && userId === process.env.ADMIN_USER_ID) {
+  // El admin tiene corazones ilimitados para poder probar contenido
+  if (data && isAdminId(userId)) {
     return { ...data, hearts: Infinity };
   }
 
@@ -37,29 +27,25 @@ export const getUserProgress = cache(async () => {
 });
 
 export const getUnits = cache(async () => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
   const userProgress = await getUserProgress();
 
   if (!userId || !userProgress?.activeCourseId) {
     return [];
   }
 
-  const data = await db.query.units.findMany({
-    orderBy: (units, { asc }) => [asc(units.order)],
-    where: eq(units.courseId, userProgress.activeCourseId),
-    with: {
+  const data = await prisma.unit.findMany({
+    where: { courseId: userProgress.activeCourseId },
+    orderBy: { order: "asc" },
+    include: {
       lessons: {
-        orderBy: (lessons, { asc }) => [asc(lessons.order)],
-        with: {
+        orderBy: { order: "asc" },
+        include: {
           challenges: {
-            orderBy: (challenges, { asc }) => [asc(challenges.order)],
-            with: {
+            orderBy: { order: "asc" },
+            include: {
               challengeProgress: {
-                where: eq(
-                  challengeProgress.userId,
-                  userId,
-                ),
+                where: { userId },
               },
             },
           },
@@ -92,76 +78,72 @@ export const getUnits = cache(async () => {
 });
 
 export const getCourses = cache(async () => {
-  const { userId: clerkUserId } = auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
-  
+  const { userId } = auth();
+
   if (!userId) {
-    return await db.query.courses.findMany({
-      where: isNull(courses.classroomId)
+    return await prisma.course.findMany({
+      where: { classroomId: null },
     });
   }
 
-  const memberships = await db.query.classroomMembers.findMany({
-    where: eq(classroomMembers.userId, userId)
+  const memberships = await prisma.classroomMember.findMany({
+    where: { userId },
   });
-  
-  const classroomIds = memberships.map(m => m.classroomId);
+
+  const classroomIds = memberships.map((m) => m.classroomId);
 
   if (classroomIds.length === 0) {
-    return await db.query.courses.findMany({
-      where: isNull(courses.classroomId)
+    return await prisma.course.findMany({
+      where: { classroomId: null },
     });
   }
 
-  const data = await db.query.courses.findMany({
-    where: or(
-      isNull(courses.classroomId),
-      inArray(courses.classroomId, classroomIds)
-    )
+  return await prisma.course.findMany({
+    where: {
+      OR: [
+        { classroomId: null },
+        { classroomId: { in: classroomIds } },
+      ],
+    },
   });
-
-  return data;
 });
 
 export const getCourseById = cache(async (courseId: number) => {
-  const data = await db.query.courses.findFirst({
-    where: eq(courses.id, courseId),
-    with: {
+  return await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
       units: {
-        orderBy: (units, { asc }) => [asc(units.order)],
-        with: {
+        orderBy: { order: "asc" },
+        include: {
           lessons: {
-            orderBy: (lessons, { asc }) => [asc(lessons.order)],
+            orderBy: { order: "asc" },
           },
         },
       },
     },
   });
-
-  return data;
 });
 
 export const getCourseProgress = cache(async () => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
   const userProgress = await getUserProgress();
 
   if (!userId || !userProgress?.activeCourseId) {
     return null;
   }
 
-  const unitsInActiveCourse = await db.query.units.findMany({
-    orderBy: (units, { asc }) => [asc(units.order)],
-    where: eq(units.courseId, userProgress.activeCourseId),
-    with: {
+  const unitsInActiveCourse = await prisma.unit.findMany({
+    where: { courseId: userProgress.activeCourseId },
+    orderBy: { order: "asc" },
+    include: {
       lessons: {
-        orderBy: (lessons, { asc }) => [asc(lessons.order)],
-        with: {
+        orderBy: { order: "asc" },
+        include: {
           unit: true,
           challenges: {
-            with: {
+            include: {
               challengeProgress: {
-                where: eq(challengeProgress.userId, userId),
+                where: { userId },
               },
             },
           },
@@ -176,9 +158,9 @@ export const getCourseProgress = cache(async () => {
       // Saltar lecciones vacías (sin preguntas) — no bloquean el avance
       if (lesson.challenges.length === 0) return false;
       return lesson.challenges.some((challenge) => {
-        return !challenge.challengeProgress 
-          || challenge.challengeProgress.length === 0 
-          || challenge.challengeProgress.some((progress) => progress.completed === false)
+        return !challenge.challengeProgress
+          || challenge.challengeProgress.length === 0
+          || challenge.challengeProgress.some((progress) => progress.completed === false);
       });
     });
 
@@ -189,8 +171,7 @@ export const getCourseProgress = cache(async () => {
 });
 
 export const getLesson = cache(async (id?: number) => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
 
   if (!userId) {
     return null;
@@ -204,15 +185,15 @@ export const getLesson = cache(async (id?: number) => {
     return null;
   }
 
-  const data = await db.query.lessons.findFirst({
-    where: eq(lessons.id, lessonId),
-    with: {
+  const data = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
       challenges: {
-        orderBy: (challenges, { asc }) => [asc(challenges.order)],
-        with: {
+        orderBy: { order: "asc" },
+        include: {
           challengeOptions: true,
           challengeProgress: {
-            where: eq(challengeProgress.userId, userId),
+            where: { userId },
           },
         },
       },
@@ -224,14 +205,14 @@ export const getLesson = cache(async (id?: number) => {
   }
 
   const normalizedChallenges = data.challenges.map((challenge) => {
-    const completed = challenge.challengeProgress 
+    const completed = challenge.challengeProgress
       && challenge.challengeProgress.length > 0
-      && challenge.challengeProgress.every((progress) => progress.completed)
+      && challenge.challengeProgress.every((progress) => progress.completed);
 
-    return { ...challenge, completed };
+    return { ...challenge, completed: !!completed };
   });
 
-  return { ...data, challenges: normalizedChallenges }
+  return { ...data, challenges: normalizedChallenges };
 });
 
 export const getLessonPercentage = cache(async () => {
@@ -260,22 +241,21 @@ export const getLessonPercentage = cache(async () => {
 
 const DAY_IN_MS = 86_400_000;
 export const getUserSubscription = cache(async () => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
 
   if (!userId) return null;
 
-  if (userId === process.env.ADMIN_USER_ID) {
+  if (isAdminId(userId)) {
     return { isActive: true };
   }
 
-  const data = await db.query.userSubscription.findFirst({
-    where: eq(userSubscription.userId, userId),
+  const data = await prisma.userSubscription.findUnique({
+    where: { userId },
   });
 
   if (!data) return null;
 
-  const isActive = 
+  const isActive =
     data.stripePriceId &&
     data.stripeCurrentPeriodEnd &&
     data.stripeCurrentPeriodEnd.getTime() + DAY_IN_MS > Date.now();
@@ -287,54 +267,50 @@ export const getUserSubscription = cache(async () => {
 });
 
 export const getCompletedChallengesCount = cache(async () => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
 
   if (!userId) {
     return 0;
   }
 
-  const data = await db.query.challengeProgress.findMany({
-    where: eq(challengeProgress.userId, userId),
+  return await prisma.challengeProgress.count({
+    where: { userId, completed: true },
   });
-
-  return data.filter((progress) => progress.completed).length;
 });
 
 export const getTopTenUsers = cache(async (
   timeframe: "ALL_TIME" | "WEEKLY" = "ALL_TIME",
   classroomId?: number
 ) => {
-  const { userId: clerkUserId } = await auth();
-  const userId = clerkUserId || process.env.ADMIN_USER_ID || "user_3DGcgViJmbQQqY2hzTueZQjcvsB";
+  const { userId } = auth();
 
   if (!userId) {
     return [];
   }
 
-  // Base query on userProgress
-  let queryBase = db.select({
-    userId: userProgress.userId,
-    userName: userProgress.userName,
-    userImageSrc: userProgress.userImageSrc,
-    points: userProgress.points,
-    weeklyPoints: userProgress.weeklyPoints,
-    league: userProgress.league,
-    activeBorder: userProgress.activeBorder,
-  }).from(userProgress);
-
-  // If classroomId is provided, join with classroomMembers
+  let memberIds: string[] | undefined;
   if (classroomId) {
-    queryBase = queryBase
-      .innerJoin(classroomMembers, eq(classroomMembers.userId, userProgress.userId))
-      .where(eq(classroomMembers.classroomId, classroomId)) as any;
+    const members = await prisma.classroomMember.findMany({
+      where: { classroomId },
+      select: { userId: true },
+    });
+    memberIds = members.map((m) => m.userId);
   }
 
-  const data = await queryBase
-    .orderBy(
-      timeframe === "WEEKLY" ? desc(userProgress.weeklyPoints) : desc(userProgress.points)
-    )
-    .limit(50);
-
-  return data;
+  return await prisma.userProgress.findMany({
+    where: memberIds ? { userId: { in: memberIds } } : undefined,
+    select: {
+      userId: true,
+      userName: true,
+      userImageSrc: true,
+      points: true,
+      weeklyPoints: true,
+      league: true,
+      activeBorder: true,
+    },
+    orderBy: timeframe === "WEEKLY"
+      ? { weeklyPoints: "desc" }
+      : { points: "desc" },
+    take: 50,
+  });
 });

@@ -45,8 +45,8 @@ export const NewWarForm = ({ availableLessons }: { availableLessons: any[] }) =>
       selectedLessonIds: selectedLessons.length > 0 ? selectedLessons : undefined,
     });
 
-    if (res?.error) {
-      toast.error(res.error, { id: toastId });
+    if (res?.error || !res?.tournament) {
+      toast.error(res?.error || "No se pudo crear la guerra", { id: toastId });
       setLoading(false);
     } else {
       toast.success("¡Guerra creada exitosamente!", { id: toastId });

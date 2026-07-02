@@ -1,9 +1,7 @@
 "use server";
 
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { mistakeLogs } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 export const logMistake = async (
   context: "LESSON" | "PVP" | "MOCK_EXAM",
@@ -20,12 +18,14 @@ export const logMistake = async (
     const cleanWrong = wrongAnswerText.substring(0, 500);
     const cleanCorrect = correctAnswerText ? correctAnswerText.substring(0, 500) : null;
 
-    await db.insert(mistakeLogs).values({
-      userId,
-      context,
-      questionText: cleanQuestion,
-      wrongAnswerText: cleanWrong,
-      correctAnswerText: cleanCorrect,
+    await prisma.mistakeLog.create({
+      data: {
+        userId,
+        context,
+        questionText: cleanQuestion,
+        wrongAnswerText: cleanWrong,
+        correctAnswerText: cleanCorrect,
+      },
     });
 
     return { success: true };
@@ -40,10 +40,10 @@ export const getUserMistakes = async (limit: number = 5) => {
     const { userId } = auth();
     if (!userId) return { error: "Unauthorized" };
 
-    const logs = await db.query.mistakeLogs.findMany({
-      where: eq(mistakeLogs.userId, userId),
-      orderBy: [desc(mistakeLogs.createdAt)],
-      limit,
+    const logs = await prisma.mistakeLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
     });
 
     return { data: logs };

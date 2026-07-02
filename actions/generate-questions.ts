@@ -3,12 +3,11 @@
 import { z } from "zod";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
-import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-import db from "@/db/drizzle";
-import { challenges, challengeOptions, lessons } from "@/db/schema";
+import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
+import { AI_MODEL } from "@/constants";
 
 const QuestionSchema = z.object({
   questions: z.array(z.object({
@@ -26,8 +25,8 @@ export const generateQuestionsForLesson = async (lessonId: number) => {
     throw new Error("Unauthorized");
   }
 
-  const lessonData = await db.query.lessons.findFirst({
-    where: eq(lessons.id, lessonId)
+  const lessonData = await prisma.lesson.findUnique({
+    where: { id: lessonId },
   });
 
   if (!lessonData || !lessonData.referenceText) {
@@ -36,7 +35,7 @@ export const generateQuestionsForLesson = async (lessonId: number) => {
 
   try {
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: google(AI_MODEL),
       schema: QuestionSchema,
       prompt: `Actúa como un tutor experto en preparación preuniversitaria para exámenes de admisión en Perú (ej. San Marcos, UNI).
 Lee el siguiente texto y genera exactamente 3 preguntas de comprensión lectora.
@@ -53,21 +52,21 @@ ${lessonData.referenceText}`
     for (let i = 0; i < object.questions.length; i++) {
       const q = object.questions[i];
 
-      const [insertedChallenge] = await db.insert(challenges).values({
-        lessonId: lessonId,
-        type: "SELECT",
-        question: q.questionText,
-        order: i + 1,
-      }).returning();
-
-      const optionsToInsert = q.options.map(opt => ({
-        challengeId: insertedChallenge.id,
-        text: opt.text,
-        correct: opt.isCorrect,
-        explanation: opt.explanation,
-      }));
-
-      await db.insert(challengeOptions).values(optionsToInsert);
+      await prisma.challenge.create({
+        data: {
+          lessonId,
+          type: "SELECT",
+          question: q.questionText,
+          order: i + 1,
+          challengeOptions: {
+            create: q.options.map((opt) => ({
+              text: opt.text,
+              correct: opt.isCorrect,
+              explanation: opt.explanation,
+            })),
+          },
+        },
+      });
     }
 
     revalidatePath(`/lesson/${lessonId}`);

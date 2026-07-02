@@ -1,4 +1,4 @@
-import { lessons, units } from "@/db/schema"
+import type { Lesson, Unit as UnitModel } from "@prisma/client";
 
 import { UnitBanner } from "./unit-banner";
 import { LessonButton } from "./lesson-button";
@@ -8,11 +8,11 @@ type Props = {
   order: number;
   title: string;
   description: string;
-  lessons: (typeof lessons.$inferSelect & {
+  lessons: (Lesson & {
     completed: boolean;
   })[];
-  activeLesson: typeof lessons.$inferSelect & {
-    unit: typeof units.$inferSelect;
+  activeLesson: Lesson & {
+    unit: UnitModel;
   } | undefined;
   activeLessonPercentage: number;
 };

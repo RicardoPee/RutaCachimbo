@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
-  // Check authorization to prevent abuse (Vercel passes CRON_SECRET)
+  // Check authorization to prevent abuse (Vercel passes CRON_SECRET).
+  // Falla cerrado: si CRON_SECRET no está configurada, nadie puede ejecutarlo.
   const authHeader = req.headers.get("authorization");
   if (
-    process.env.CRON_SECRET &&
+    !process.env.CRON_SECRET ||
     authHeader !== `Bearer ${process.env.CRON_SECRET}`
   ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

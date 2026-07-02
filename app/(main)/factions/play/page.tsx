@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, clerkClient } from "@clerk/nextjs";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { PlayClient } from "./play-client";
 import { prisma } from "@/lib/prisma";
 

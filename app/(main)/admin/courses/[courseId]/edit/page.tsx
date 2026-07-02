@@ -1,12 +1,13 @@
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { CourseForm } from "@/components/admin/course-form";
+import { isAdminId } from "@/lib/admin";
 
 export default async function EditCoursePage({ params }: { params: { courseId: string } }) {
   const { userId } = auth();
   
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdminId(userId)) {
     redirect("/");
   }
 

@@ -6,7 +6,7 @@ import { getUserProgress, getUserSubscription } from "@/db/queries";
 import { Promo } from "@/components/promo";
 import { RadarChartClient } from "./radar-chart-client";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 
 const AnalyticsPage = async () => {
   const userProgressData = getUserProgress();

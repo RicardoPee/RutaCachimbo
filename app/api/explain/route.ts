@@ -1,31 +1,55 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { userProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+
+import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { AI_MODEL } from "@/constants";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+const ExplainRequestSchema = z.object({
+  referenceText: z.string().max(50_000).nullish(),
+  question: z.string().max(5_000),
+  selectedOptionText: z.string().max(5_000),
+  isCorrect: z.boolean(),
+  hearts: z.number().int().nullish(),
+});
 
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
+
+    if (!userId) {
+      return new NextResponse("No autorizado", { status: 401 });
+    }
+
+    const { success } = rateLimit(`explain:${userId}`, { limit: 15, windowMs: 60_000 });
+    if (!success) {
+      return new NextResponse("Demasiadas solicitudes. Espera un momento.", { status: 429 });
+    }
+
+    const parsed = ExplainRequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new NextResponse("Solicitud inválida", { status: 400 });
+    }
+
+    const { referenceText, question, selectedOptionText, isCorrect, hearts } = parsed.data;
+
     let studentName = "Estudiante";
     let studentHearts = 5;
     let studentPoints = 0;
 
-    const { referenceText, question, selectedOptionText, isCorrect, hearts } = await req.json();
-
-    if (userId) {
-      const progress = await db.query.userProgress.findFirst({
-        where: eq(userProgress.userId, userId),
-      });
-      if (progress) {
-        studentName = progress.userName || "Estudiante";
-        studentHearts = typeof hearts === "number" ? hearts : progress.hearts;
-        studentPoints = progress.points;
-      }
+    const progress = await prisma.userProgress.findUnique({
+      where: { userId },
+    });
+    if (progress) {
+      studentName = progress.userName || "Estudiante";
+      studentHearts = typeof hearts === "number" ? hearts : progress.hearts;
+      studentPoints = progress.points;
     }
 
     const systemPrompt = `
@@ -58,7 +82,7 @@ Datos del Estudiante:
 
 Texto de Referencia:
 """
-${referenceText}
+${referenceText || "(sin texto de referencia)"}
 """
 
 Pregunta del Simulacro:
@@ -72,8 +96,8 @@ Opción que seleccionó el estudiante:
 Genera tu respuesta socrática optimizada de tutoría cognitiva para ${studentName}:
 `;
 
-    const result = await streamText({
-      model: google("gemini-2.5-flash"),
+    const result = streamText({
+      model: google(AI_MODEL),
       system: systemPrompt,
       prompt: userPrompt,
     });

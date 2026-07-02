@@ -1,8 +1,9 @@
 "use server";
 
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { isAdminId } from "@/lib/admin";
 
 export const joinFaction = async (factionId: number) => {
   const { userId } = auth();
@@ -37,9 +38,8 @@ export const getFactionsLeaderboard = async () => {
 // --- ADMIN ACTIONS ---
 
 export const createFaction = async (data: { name: string; description: string; logoSrc: string }) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     await prisma.faction.create({ data });
@@ -52,9 +52,8 @@ export const createFaction = async (data: { name: string; description: string; l
 };
 
 export const updateFaction = async (id: number, data: { name: string; description: string; logoSrc: string }) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     await prisma.faction.update({
@@ -70,9 +69,8 @@ export const updateFaction = async (id: number, data: { name: string; descriptio
 };
 
 export const deleteFaction = async (id: number) => {
-  const adminId = process.env.ADMIN_USER_ID;
-  const { userId } = auth();
-  if (userId !== adminId) return { error: "No autorizado" };
+    const { userId } = auth();
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     await prisma.faction.delete({ where: { id } });

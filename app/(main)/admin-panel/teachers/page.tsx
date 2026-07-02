@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
-import db from "@/db/drizzle";
-import { teacherApplications } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/lib/prisma";
 import { ActionButtons } from "./action-buttons";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -12,9 +10,9 @@ const AdminTeachersPage = async () => {
     redirect("/");
   }
 
-  const applications = await db.query.teacherApplications.findMany({
-    where: eq(teacherApplications.status, "PENDING"),
-    with: {
+  const applications = await prisma.teacherApplication.findMany({
+    where: { status: "PENDING" },
+    include: {
       user: true,
     },
   });

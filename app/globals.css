@@ -2,20 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
+/*
+ * Paleta de marca "Ruta Cachimbo"
+ * Primario: esmeralda (el color del logo y la identidad de la app)
+ * Secundario: índigo (competencia, épico-académico)
+ * Acento: ámbar (recompensas, XP, logros)
+ */
 :root {
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
-  --primary: 243 75% 59%;
+  --primary: 160 84% 39%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 189 94% 43%;
+  --secondary: 243 75% 59%;
   --secondary-foreground: 0 0% 100%;
   --accent: 38 92% 50%;
-  --accent-foreground: 0 0% 100%;
+  --accent-foreground: 24 10% 10%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --muted: 210 40% 96.1%;
+  --muted: 150 20% 96%;
   --muted-foreground: 215.4 16.3% 46.9%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
@@ -23,19 +27,19 @@
   --popover-foreground: 222.2 84% 4.9%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 243 75% 59%;
+  --ring: 160 84% 39%;
   --radius: 0.75rem;
 }
 
 .dark {
   --background: 224 71% 4%;
   --foreground: 210 40% 98%;
-  --primary: 239 84% 67%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 189 94% 43%;
-  --secondary-foreground: 222.2 84% 4.9%;
+  --primary: 160 84% 45%;
+  --primary-foreground: 160 90% 8%;
+  --secondary: 239 84% 67%;
+  --secondary-foreground: 0 0% 100%;
   --accent: 38 92% 50%;
-  --accent-foreground: 222.2 84% 4.9%;
+  --accent-foreground: 24 10% 10%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --muted: 215 28% 17%;
@@ -46,7 +50,7 @@
   --popover-foreground: 210 40% 98%;
   --border: 215 28% 17%;
   --input: 215 28% 17%;
-  --ring: 239 84% 67%;
+  --ring: 160 84% 45%;
 }
 
 * {
@@ -56,26 +60,25 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 }
 
-/* ─── Fonts ─────────────────────────────────────────────── */
+/* ─── Fonts (cargadas con next/font en app/layout.tsx) ───── */
 .font-bebas {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-bebas), sans-serif;
   letter-spacing: 0.05em;
 }
 
 .font-cinzel {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-cinzel), serif;
 }
 
 /* ─── Glass Morphism ─────────────────────────────────────── */
 .glass {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .dark .glass {
@@ -84,10 +87,10 @@ body {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .dark .glass-card {
@@ -105,6 +108,12 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(100, 116, 139, 0.3);
   border-radius: 20px;
+}
+
+/* ─── Accesibilidad: foco visible con teclado ────────────── */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }
 
 /* ─── Animations ─────────────────────────────────────────── */
@@ -161,6 +170,17 @@ body {
 
 .animate-pulse-glow {
   animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Respeta la preferencia del usuario de reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-blob,
+  .animate-gradient-x,
+  .animate-heartbeat,
+  .animate-pulse-glow {
+    animation: none;
+  }
 }
 
 /* ─── Countdown Styles ───────────────────────────────────── */

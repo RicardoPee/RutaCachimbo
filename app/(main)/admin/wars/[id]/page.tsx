@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { auth, clerkClient } from "@clerk/nextjs";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { 
-  ArrowLeft, 
+import { isAdminId } from "@/lib/admin";
+import {
+  ArrowLeft,
   Swords, 
   BookOpen, 
   Clock, 
@@ -18,9 +19,7 @@ import { PublishButton } from "./publish-button";
 
 export default async function TournamentDetailPage({ params }: { params: { id: string } }) {
   const { userId } = auth();
-  const adminId = process.env.ADMIN_USER_ID;
-
-  if (userId !== adminId) {
+    if (!isAdminId(userId)) {
     redirect("/");
   }
 
@@ -60,7 +59,7 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
   let enrichedParticipants: any[] = [];
   if (participants.length > 0) {
     const userIds = participants.map(p => p.userId);
-    const clerkUsers = await clerkClient.users.getUserList({ userId: userIds });
+    const { data: clerkUsers } = await clerkClient.users.getUserList({ userId: userIds });
     enrichedParticipants = participants.map(p => {
       const clerkUser = clerkUsers.find(u => u.id === p.userId);
       return {

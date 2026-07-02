@@ -1,8 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { isAdminId } from "@/lib/admin";
 
 export async function upsertChallengeOption(data: { 
   id?: number; 
@@ -15,7 +16,7 @@ export async function upsertChallengeOption(data: {
 }) {
   const { userId } = auth();
   
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdminId(userId)) {
     throw new Error("Unauthorized");
   }
 

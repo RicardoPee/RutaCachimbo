@@ -1,14 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth, currentUser } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
-import db from "@/db/drizzle";
-import { POINTS_TO_REFILL } from "@/constants";
+import { prisma } from "@/lib/prisma";
+import { POINTS_TO_REFILL, MAX_HEARTS } from "@/constants";
 import { getCourseById, getUserProgress, getUserSubscription } from "@/db/queries";
-import { challengeProgress, challenges, userProgress } from "@/db/schema";
 
 export const upsertUserProgress = async (courseId: number) => {
   const { userId } = auth();
@@ -28,25 +26,19 @@ export const upsertUserProgress = async (courseId: number) => {
     return { error: "empty" };
   }
 
-  const existingUserProgress = await getUserProgress();
-
-  if (existingUserProgress) {
-    await db.update(userProgress).set({
+  await prisma.userProgress.upsert({
+    where: { userId },
+    update: {
       activeCourseId: courseId,
       userName: user.firstName || "User",
       userImageSrc: user.imageUrl || "/mascot.svg",
-    }).where(eq(userProgress.userId, userId));
-
-    revalidatePath("/courses");
-    revalidatePath("/learn");
-    redirect("/learn");
-  }
-
-  await db.insert(userProgress).values({
-    userId,
-    activeCourseId: courseId,
-    userName: user.firstName || "User",
-    userImageSrc: user.imageUrl || "/mascot.svg",
+    },
+    create: {
+      userId,
+      activeCourseId: courseId,
+      userName: user.firstName || "User",
+      userImageSrc: user.imageUrl || "/mascot.svg",
+    },
   });
 
   revalidatePath("/courses");
@@ -64,8 +56,8 @@ export const reduceHearts = async (challengeId: number) => {
   const currentUserProgress = await getUserProgress();
   const userSubscription = await getUserSubscription();
 
-  const challenge = await db.query.challenges.findFirst({
-    where: eq(challenges.id, challengeId),
+  const challenge = await prisma.challenge.findUnique({
+    where: { id: challengeId },
   });
 
   if (!challenge) {
@@ -74,17 +66,14 @@ export const reduceHearts = async (challengeId: number) => {
 
   const lessonId = challenge.lessonId;
 
-  const existingChallengeProgress = await db.query.challengeProgress.findFirst({
-    where: and(
-      eq(challengeProgress.userId, userId),
-      eq(challengeProgress.challengeId, challengeId),
-    ),
+  const existingChallengeProgress = await prisma.challengeProgress.findFirst({
+    where: { userId, challengeId },
   });
 
   const isPractice = !!existingChallengeProgress;
 
   if (isPractice) {
-    return { error: "practice" }; 
+    return { error: "practice" };
   }
 
   if (!currentUserProgress) {
@@ -99,9 +88,10 @@ export const reduceHearts = async (challengeId: number) => {
     return { error: "hearts" };
   }
 
-  await db.update(userProgress).set({
-    hearts: Math.max(currentUserProgress.hearts - 1, 0),
-  }).where(eq(userProgress.userId, userId));
+  await prisma.userProgress.update({
+    where: { userId },
+    data: { hearts: Math.max(currentUserProgress.hearts - 1, 0) },
+  });
 
   revalidatePath("/shop");
   revalidatePath("/learn");
@@ -118,7 +108,7 @@ export const refillHearts = async () => {
     throw new Error("User progress not found");
   }
 
-  if (currentUserProgress.hearts === 5) {
+  if (currentUserProgress.hearts === MAX_HEARTS) {
     throw new Error("Hearts are already full");
   }
 
@@ -126,10 +116,13 @@ export const refillHearts = async () => {
     throw new Error("Not enough points");
   }
 
-  await db.update(userProgress).set({
-    hearts: 5,
-    points: currentUserProgress.points - POINTS_TO_REFILL,
-  }).where(eq(userProgress.userId, currentUserProgress.userId));
+  await prisma.userProgress.update({
+    where: { userId: currentUserProgress.userId },
+    data: {
+      hearts: MAX_HEARTS,
+      points: currentUserProgress.points - POINTS_TO_REFILL,
+    },
+  });
 
   revalidatePath("/shop");
   revalidatePath("/learn");
@@ -149,9 +142,10 @@ export const deductPointsForTutor = async (pointsToDeduct: number) => {
     return { error: "Not enough points" };
   }
 
-  await db.update(userProgress).set({
-    points: currentUserProgress.points - pointsToDeduct,
-  }).where(eq(userProgress.userId, currentUserProgress.userId));
+  await prisma.userProgress.update({
+    where: { userId: currentUserProgress.userId },
+    data: { points: currentUserProgress.points - pointsToDeduct },
+  });
 
   revalidatePath("/tutor");
   return { success: true };

@@ -27,6 +27,23 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum PvpStatus {
+  NEGOTIATING
+  WAITING
+  PLAYING
+  FINISHED
+
+  @@map("pvp_status")
+}
+
+enum TournamentStatus {
+  PENDING
+  ACTIVE
+  FINISHED
+
+  @@map("tournament_status")
+}
+
 model Classroom {
   id          Int               @id @default(autoincrement())
   name        String
@@ -45,6 +62,8 @@ model ClassroomMember {
   userId      String    @map("user_id")
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
 
+  @@unique([classroomId, userId])
+  @@index([userId])
   @@map("classroom_members")
 }
 
@@ -117,6 +136,8 @@ model ChallengeProgress {
   completed   Boolean   @default(false)
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, challengeId])
+  @@index([challengeId])
   @@map("challenge_progress")
 }
 
@@ -137,13 +158,16 @@ model UserProgress {
   streakFreeze       Boolean              @default(false) @map("streak_freeze")
   xpBoosterEndsAt    DateTime?            @map("xp_booster_ends_at")
   ownedBorders       String[]             @default([]) @map("owned_borders")
-  streak             Int?                 @default(0)
+  streak             Int                  @default(0)
   lastActive         DateTime?            @default(now()) @map("last_active")
   unlockedAchievements String[]           @default([]) @map("unlocked_achievements")
   factionId          Int?                 @map("faction_id")
   faction            Faction?             @relation(fields: [factionId], references: [id])
   factionJoinedAt    DateTime?            @map("faction_joined_at")
 
+  @@index([points])
+  @@index([weeklyPoints])
+  @@index([factionId])
   @@map("user_progress")
 }
 
@@ -155,6 +179,8 @@ model TeacherApplication {
   status      ApplicationStatus @default(PENDING)
   user        UserProgress      @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([status])
   @@map("teacher_applications")
 }
 
@@ -189,13 +215,14 @@ model MockExamResult {
   aiFeedback String?  @map("ai_feedback")
   createdAt  DateTime @default(now()) @map("created_at")
 
+  @@index([userId, createdAt])
   @@map("mock_exam_results")
 }
 
 model PvpMatch {
   id                    Int      @id @default(autoincrement())
   code                  String   @unique
-  status                String   @default("NEGOTIATING")
+  status                PvpStatus @default(NEGOTIATING)
   player1Id             String   @map("player1_id")
   player2Id             String?  @map("player2_id")
   currentTurnId         String?  @map("current_turn_id")
@@ -210,6 +237,9 @@ model PvpMatch {
   p2Ready               Boolean  @default(false) @map("p2_ready")
   createdAt             DateTime @default(now()) @map("created_at")
 
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
   @@map("pvp_matches")
 }
 
@@ -222,6 +252,7 @@ model MistakeLog {
   correctAnswerText String?  @map("correct_answer_text")
   createdAt         DateTime @default(now()) @map("created_at")
 
+  @@index([userId, createdAt])
   @@map("mistake_logs")
 }
 
@@ -253,6 +284,7 @@ model UserChest {
   rewardValue String?    @map("reward_value")
   createdAt   DateTime   @default(now()) @map("created_at")
 
+  @@index([userId, opened])
   @@map("user_chests")
 }
 
@@ -264,7 +296,7 @@ model LiveTournament {
   toleranceMinutes Int      @default(15) @map("tolerance_minutes")
   roundDuration    Int      @default(180) @map("round_duration")
   intermissionTime Int      @default(15) @map("intermission_time")
-  status           String   @default("PENDING") // PENDING, ACTIVE, FINISHED
+  status           TournamentStatus @default(PENDING)
   
   questions        TournamentQuestion[]
   participants     TournamentParticipant[]
@@ -297,5 +329,7 @@ model TournamentParticipant {
   answers      Json?    // Array of { questionId, selectedIndex, timeTaken, pointsEarned }
   joinedAt     DateTime @default(now()) @map("joined_at")
 
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, score])
   @@map("tournament_participants")
 }

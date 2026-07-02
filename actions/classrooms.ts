@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { classrooms, classroomMembers } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 function generateInviteCode(length = 6) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -24,12 +22,14 @@ export const createClassroom = async (name: string, description?: string) => {
 
   const inviteCode = generateInviteCode();
 
-  const [newClassroom] = await db.insert(classrooms).values({
-    name,
-    description,
-    teacherId: userId,
-    inviteCode,
-  }).returning();
+  const newClassroom = await prisma.classroom.create({
+    data: {
+      name,
+      description,
+      teacherId: userId,
+      inviteCode,
+    },
+  });
 
   revalidatePath("/teacher/classrooms");
   return newClassroom;
@@ -42,29 +42,24 @@ export const joinClassroom = async (inviteCode: string) => {
     throw new Error("No estás autenticado.");
   }
 
-  const classroom = await db.query.classrooms.findFirst({
-    where: eq(classrooms.inviteCode, inviteCode.toUpperCase()),
+  const classroom = await prisma.classroom.findUnique({
+    where: { inviteCode: inviteCode.toUpperCase() },
   });
 
   if (!classroom) {
     return { error: "Código de aula no válido." };
   }
 
-  // Check if already a member
-  const existingMember = await db.query.classroomMembers.findFirst({
-    where: and(
-      eq(classroomMembers.classroomId, classroom.id),
-      eq(classroomMembers.userId, userId)
-    ),
+  const existingMember = await prisma.classroomMember.findFirst({
+    where: { classroomId: classroom.id, userId },
   });
 
   if (existingMember) {
     return { error: "Ya eres miembro de esta aula." };
   }
 
-  await db.insert(classroomMembers).values({
-    classroomId: classroom.id,
-    userId,
+  await prisma.classroomMember.create({
+    data: { classroomId: classroom.id, userId },
   });
 
   revalidatePath("/courses");

@@ -1,22 +1,23 @@
-import { authMiddleware } from "@clerk/nextjs";
- 
-export default authMiddleware({
-  publicRoutes: [
-    "/", 
-    "/api/webhooks/stripe", 
-    "/learn", 
-    "/courses", 
-    "/lesson(.*)", 
-    "/admin(.*)", 
-    "/shop", 
-    "/quests", 
-    "/leaderboard"
-  ],
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+
+// Solo la landing, autenticación, webhooks y crons son públicos.
+// Todo lo demás (app, admin, APIs) requiere sesión iniciada.
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/login(.*)",
+  "/registro(.*)",
+  "/comunidad",
+  "/temarios",
+  "/api/webhooks/stripe",
+  "/api/cron/(.*)",
+]);
+
+export default clerkMiddleware((auth, req) => {
+  if (!isPublicRoute(req)) {
+    auth().protect();
+  }
 });
- 
+
 export const config = {
-  // Protects all routes, including api/trpc.
-  // See https://clerk.com/docs/references/nextjs/auth-middleware
-  // for more information about configuring your Middleware
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

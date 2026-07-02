@@ -2,11 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { InfinityIcon, Flame } from "lucide-react";
 
-import { courses } from "@/db/schema";
+import type { Course } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  activeCourse: typeof courses.$inferSelect;
+  activeCourse: Course;
   hearts: number;
   points: number;
   hasActiveSubscription: boolean;

@@ -1,13 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { WarAdminClient } from "./war-admin-client";
+import { isAdminId } from "@/lib/admin";
 
 export default async function AdminWarsPage() {
   const { userId } = auth();
-  const adminId = process.env.ADMIN_USER_ID;
-
-  if (userId !== adminId) {
+    if (!isAdminId(userId)) {
     redirect("/");
   }
 

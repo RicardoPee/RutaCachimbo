@@ -1,19 +1,18 @@
 "use server";
 
-import { auth } from "@clerk/nextjs";
-import { and, eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
-import db from "@/db/drizzle";
+import { prisma } from "@/lib/prisma";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
-import { challengeProgress, challenges, userProgress } from "@/db/schema";
 import { calculateNewStreak } from "@/lib/streak";
+import { POINTS_PER_CHALLENGE, MAX_HEARTS } from "@/constants";
 
 export const upsertChallengeProgress = async (challengeId: number) => {
   const { userId } = auth();
 
   if (!userId) {
-    throw new Error("Unauthorized"); 
+    throw new Error("Unauthorized");
   }
 
   const currentUserProgress = await getUserProgress();
@@ -23,8 +22,8 @@ export const upsertChallengeProgress = async (challengeId: number) => {
     throw new Error("User progress not found");
   }
 
-  const challenge = await db.query.challenges.findFirst({
-    where: eq(challenges.id, challengeId)
+  const challenge = await prisma.challenge.findUnique({
+    where: { id: challengeId },
   });
 
   if (!challenge) {
@@ -33,73 +32,59 @@ export const upsertChallengeProgress = async (challengeId: number) => {
 
   const lessonId = challenge.lessonId;
 
-  const existingChallengeProgress = await db.query.challengeProgress.findFirst({
-    where: and(
-      eq(challengeProgress.userId, userId),
-      eq(challengeProgress.challengeId, challengeId),
-    ),
+  const existingChallengeProgress = await prisma.challengeProgress.findFirst({
+    where: { userId, challengeId },
   });
 
   const isPractice = !!existingChallengeProgress;
 
   if (
-    currentUserProgress.hearts === 0 && 
-    !isPractice && 
+    currentUserProgress.hearts === 0 &&
+    !isPractice &&
     !userSubscription?.isActive
   ) {
     return { error: "hearts" };
   }
 
-  if (isPractice) {
-    await db.update(challengeProgress).set({
-      completed: true,
-    })
-    .where(
-      eq(challengeProgress.id, existingChallengeProgress.id)
-    );
-
-    const { newStreak, usedFreeze, newLastActive } = calculateNewStreak(
-      currentUserProgress.streak, 
-      currentUserProgress.lastActive, 
-      currentUserProgress.streakFreeze
-    );
-
-    await db.update(userProgress).set({
-      hearts: Math.min(currentUserProgress.hearts + 1, 5),
-      points: currentUserProgress.points + 10,
-      weeklyPoints: currentUserProgress.weeklyPoints + 10,
-      streak: newStreak,
-      lastActive: newLastActive,
-      ...(usedFreeze ? { streakFreeze: false } : {})
-    }).where(eq(userProgress.userId, userId));
-
-    revalidatePath("/learn");
-    revalidatePath("/lesson");
-    revalidatePath("/quests");
-    revalidatePath("/leaderboard");
-    revalidatePath(`/lesson/${lessonId}`);
-    return;
-  }
-
-  await db.insert(challengeProgress).values({
-    challengeId,
-    userId,
-    completed: true,
-  });
-
   const { newStreak, usedFreeze, newLastActive } = calculateNewStreak(
-    currentUserProgress.streak, 
-    currentUserProgress.lastActive, 
+    currentUserProgress.streak,
+    currentUserProgress.lastActive,
     currentUserProgress.streakFreeze
   );
 
-  await db.update(userProgress).set({
-    points: currentUserProgress.points + 10,
-    weeklyPoints: currentUserProgress.weeklyPoints + 10,
+  const progressUpdate = {
+    points: currentUserProgress.points + POINTS_PER_CHALLENGE,
+    weeklyPoints: currentUserProgress.weeklyPoints + POINTS_PER_CHALLENGE,
     streak: newStreak,
     lastActive: newLastActive,
-    ...(usedFreeze ? { streakFreeze: false } : {})
-  }).where(eq(userProgress.userId, userId));
+    ...(usedFreeze ? { streakFreeze: false } : {}),
+  };
+
+  if (isPractice) {
+    await prisma.$transaction([
+      prisma.challengeProgress.update({
+        where: { id: existingChallengeProgress.id },
+        data: { completed: true },
+      }),
+      prisma.userProgress.update({
+        where: { userId },
+        data: {
+          ...progressUpdate,
+          hearts: Math.min(currentUserProgress.hearts + 1, MAX_HEARTS),
+        },
+      }),
+    ]);
+  } else {
+    await prisma.$transaction([
+      prisma.challengeProgress.create({
+        data: { challengeId, userId, completed: true },
+      }),
+      prisma.userProgress.update({
+        where: { userId },
+        data: progressUpdate,
+      }),
+    ]);
+  }
 
   revalidatePath("/learn");
   revalidatePath("/lesson");

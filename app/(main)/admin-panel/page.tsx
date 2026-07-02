@@ -1,30 +1,30 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs";
 
-import db from "@/db/drizzle";
+import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/admin";
 import { AdminDashboardClient } from "./client";
 
 const AdminPanelPage = async () => {
-  const { userId } = auth();
-  
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdmin()) {
     redirect("/learn");
   }
 
   // Cargar datos directamente desde el server component (sin API)
-  const allUsers = await db.query.userProgress.findMany();
-  const allChallengeProgress = await db.query.challengeProgress.findMany();
-  const allChallenges = await db.query.challenges.findMany();
-  const allLessons = await db.query.lessons.findMany({
-    with: {
-      unit: true,
-      challenges: {
-        with: {
-          challengeOptions: true,
+  const [allUsers, allChallengeProgress, allChallenges, allLessons] = await Promise.all([
+    prisma.userProgress.findMany(),
+    prisma.challengeProgress.findMany(),
+    prisma.challenge.findMany(),
+    prisma.lesson.findMany({
+      include: {
+        unit: true,
+        challenges: {
+          include: {
+            challengeOptions: true,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
   // Construir datos de usuarios
   const users = allUsers.map((user) => {

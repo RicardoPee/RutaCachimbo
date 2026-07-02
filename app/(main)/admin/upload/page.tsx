@@ -1,13 +1,14 @@
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Bot, Sparkles, BookOpen, FileText, ExternalLink } from "lucide-react";
 import { AdminUploadPdfButton } from "./admin-upload-btn";
 import { prisma } from "@/lib/prisma";
+import { isAdminId } from "@/lib/admin";
 
 export default async function AdminUploadPage() {
   const { userId } = auth();
   
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdminId(userId)) {
     redirect("/");
   }
 

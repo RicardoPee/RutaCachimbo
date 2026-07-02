@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { useAudio, useKey } from "react-use";
 
 import { cn } from "@/lib/utils";
-import { challenges } from "@/db/schema";
+import type { Challenge } from "@prisma/client";
 
 type Props = {
   id: number;
@@ -15,7 +15,7 @@ type Props = {
   onClick: () => void;
   disabled?: boolean;
   status?: "correct" | "wrong" | "none",
-  type: typeof challenges.$inferSelect["type"];
+  type: Challenge["type"];
   isCorrect?: boolean;
   isAdmin?: boolean;
 };

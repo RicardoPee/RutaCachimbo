@@ -7,7 +7,7 @@ import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
 import { DidYouKnow } from "@/components/did-you-know";
-import { lessons, units as unitsSchema } from "@/db/schema";
+import type { Lesson, Unit as UnitModel } from "@prisma/client";
 import { 
   getCourseProgress, 
   getLessonPercentage, 
@@ -59,7 +59,7 @@ const LearnPage = async () => {
           hearts={userProgress.hearts}
           points={userProgress.points}
           hasActiveSubscription={isPro}
-          streak={userProgress.streak}
+          streak={userProgress.streak ?? 0}
         />
         {!isPro && (
           <Promo />
@@ -78,8 +78,8 @@ const LearnPage = async () => {
               description={unit.description}
               title={unit.title}
               lessons={unit.lessons}
-              activeLesson={courseProgress.activeLesson as typeof lessons.$inferSelect & {
-                unit: typeof unitsSchema.$inferSelect;
+              activeLesson={courseProgress.activeLesson as Lesson & {
+                unit: UnitModel;
               } | undefined}
               activeLessonPercentage={lessonPercentage}
             />

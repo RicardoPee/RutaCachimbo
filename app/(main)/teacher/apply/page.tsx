@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { teacherApplications, userProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 import { ApplyForm } from "./apply-form";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -15,16 +13,16 @@ const TeacherApplyPage = async () => {
     redirect("/");
   }
 
-  const progress = await db.query.userProgress.findFirst({
-    where: eq(userProgress.userId, userId),
+  const progress = await prisma.userProgress.findUnique({
+    where: { userId },
   });
 
   if (progress?.isTeacher) {
     redirect("/teacher/classrooms");
   }
 
-  const application = await db.query.teacherApplications.findFirst({
-    where: eq(teacherApplications.userId, userId),
+  const application = await prisma.teacherApplication.findFirst({
+    where: { userId },
   });
 
   return (

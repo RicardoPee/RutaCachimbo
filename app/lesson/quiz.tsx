@@ -10,7 +10,7 @@ import { useAudio, useWindowSize, useMount } from "react-use";
 import { reduceHearts } from "@/actions/user-progress";
 import { logMistake } from "@/actions/mistakes";
 import { useHeartsModal } from "@/store/use-hearts-modal";
-import { challengeOptions, challenges, userSubscription } from "@/db/schema";
+import type { Challenge as ChallengeModel, ChallengeOption, UserSubscription } from "@prisma/client";
 import { usePracticeModal } from "@/store/use-practice-modal";
 import { upsertChallengeProgress } from "@/actions/challenge-progress";
 import { generateQuestionsForLesson } from "@/actions/generate-questions";
@@ -26,13 +26,13 @@ type Props ={
   initialPercentage: number;
   initialHearts: number;
   initialLessonId: number;
-  initialLessonChallenges: (typeof challenges.$inferSelect & {
+  initialLessonChallenges: (ChallengeModel & {
     completed: boolean;
-    challengeOptions: typeof challengeOptions.$inferSelect[];
+    challengeOptions: ChallengeOption[];
   })[];
-  userSubscription: typeof userSubscription.$inferSelect & {
+  userSubscription: (Partial<UserSubscription> & {
     isActive: boolean;
-  } | null;
+  }) | null;
   referenceText: string | null;
   isAdmin?: boolean;
 };

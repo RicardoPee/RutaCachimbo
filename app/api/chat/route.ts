@@ -1,31 +1,53 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { streamText } from "ai";
 import { google } from "@ai-sdk/google";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+import { AI_MODEL } from "@/constants";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+const ChatRequestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string().max(10_000),
+  })).min(1).max(100),
+});
+
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
+
+    if (!userId) {
+      return new NextResponse("No autorizado", { status: 401 });
+    }
+
+    const { success } = rateLimit(`chat:${userId}`, { limit: 10, windowMs: 60_000 });
+    if (!success) {
+      return new NextResponse("Demasiadas solicitudes. Espera un momento.", { status: 429 });
+    }
+
+    const parsed = ChatRequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new NextResponse("Solicitud inválida", { status: 400 });
+    }
+
     let studentName = "Estudiante";
     let studentHearts = 5;
     let studentPoints = 0;
 
-    if (userId) {
-      const progress = await prisma.userProgress.findUnique({
-        where: { userId: userId },
-      });
-      if (progress) {
-        studentName = progress.userName || "Estudiante";
-        studentHearts = progress.hearts;
-        studentPoints = progress.points;
-      }
+    const progress = await prisma.userProgress.findUnique({
+      where: { userId },
+    });
+    if (progress) {
+      studentName = progress.userName || "Estudiante";
+      studentHearts = progress.hearts;
+      studentPoints = progress.points;
     }
-
-    const { messages } = await req.json();
 
     const systemPrompt = `
 Eres un Tutor de IA Experto en Comprensión Lectora y Lectura Crítica de la plataforma "Ruta Cachimbo".
@@ -41,16 +63,10 @@ REGLAS DE CONDUCTA PEDAGÓGICA:
 4. **Áreas de competencia**: Eres experto en análisis dialéctico, ideas principales, sentido contextual, compatibilidad e incompatibilidad de afirmaciones, e inferencias complejas.
 `;
 
-    // Map frontend messages (v3 format) to CoreMessages (v6 format)
-    const coreMessages = messages.map((m: any) => ({
-      role: m.role,
-      content: m.content || "",
-    }));
-
     const result = streamText({
-      model: google("gemini-1.5-flash"),
+      model: google(AI_MODEL),
       system: systemPrompt,
-      messages: coreMessages,
+      messages: parsed.data.messages,
     });
 
     return result.toTextStreamResponse();

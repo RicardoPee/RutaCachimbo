@@ -1,15 +1,15 @@
 import { cn } from "@/lib/utils";
-import { challengeOptions, challenges } from "@/db/schema";
+import type { Challenge as ChallengeModel, ChallengeOption } from "@prisma/client";
 
 import { Card } from "./card";
 
 type Props = {
-  options: typeof challengeOptions.$inferSelect[];
+  options: ChallengeOption[];
   onSelect: (id: number) => void;
   status: "correct" | "wrong" | "none";
   selectedOption?: number;
   disabled?: boolean;
-  type: typeof challenges.$inferSelect["type"];
+  type: ChallengeModel["type"];
   isAdmin?: boolean;
 };
 

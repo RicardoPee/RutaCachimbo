@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs";
-import db from "@/db/drizzle";
-import { classrooms, userProgress } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 import { CreateClassroomForm } from "./create-form";
 import { UploadPdfButton } from "./upload-btn";
 
@@ -13,16 +11,16 @@ const TeacherClassroomsPage = async () => {
     redirect("/");
   }
 
-  const progress = await db.query.userProgress.findFirst({
-    where: eq(userProgress.userId, userId),
+  const progress = await prisma.userProgress.findUnique({
+    where: { userId },
   });
 
   if (!progress?.isTeacher) {
     redirect("/teacher/apply");
   }
 
-  const myClassrooms = await db.query.classrooms.findMany({
-    where: eq(classrooms.teacherId, userId),
+  const myClassrooms = await prisma.classroom.findMany({
+    where: { teacherId: userId },
   });
 
   return (

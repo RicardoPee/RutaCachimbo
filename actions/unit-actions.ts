@@ -1,13 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { isAdminId } from "@/lib/admin";
 
 export async function upsertUnit(data: { id?: number; title: string; description: string; courseId: number; order: number }) {
   const { userId } = auth();
   
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdminId(userId)) {
     throw new Error("Unauthorized");
   }
 
@@ -46,7 +47,7 @@ export async function upsertUnit(data: { id?: number; title: string; description
 export async function deleteUnit(id: number) {
   const { userId } = auth();
   
-  if (!userId || userId !== process.env.ADMIN_USER_ID) {
+  if (!isAdminId(userId)) {
     throw new Error("Unauthorized");
   }
 

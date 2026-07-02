@@ -80,9 +80,8 @@ export default function Home() {
               <SignedOut>
                 <SignUpButton
                   mode="modal"
-                  afterSignInUrl="/learn"
-                  afterSignUpUrl="/learn"
-                >
+                  fallbackRedirectUrl="/learn"
+                                  >
                   <button className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-bold text-white bg-green-500 rounded-full transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_-10px_rgba(34,197,94,0.6)]">
                     Comenzar mi Entrenamiento
                     <ArrowRight className="w-5 h-5" />

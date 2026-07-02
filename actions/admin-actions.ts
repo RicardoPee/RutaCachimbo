@@ -1,14 +1,15 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { isAdminId } from "@/lib/admin";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 export async function simplifyAndSaveReferenceText(lessonId: number, currentText: string) {
   const { userId } = auth();
-  if (!userId || userId !== process.env.ADMIN_USER_ID) return { error: "No autorizado" };
+  if (!isAdminId(userId)) return { error: "No autorizado" };
 
   try {
     let response;

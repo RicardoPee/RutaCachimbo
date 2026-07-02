@@ -1,12 +1,25 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Outfit, Bebas_Neue, Cinzel } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/sonner";
 
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const bebas = Bebas_Neue({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-bebas",
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+  variable: "--font-cinzel",
 });
 
 export const metadata: Metadata = {
@@ -40,7 +53,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="es" suppressHydrationWarning>
         <body
-          className={`${outfit.variable} font-sans min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground flex flex-col`}
+          className={`${outfit.variable} ${bebas.variable} ${cinzel.variable} font-sans min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground flex flex-col`}
         >
           <ThemeProvider
             attribute="class"
@@ -49,6 +62,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <main className="flex-1 flex flex-col">{children}</main>
+            <Toaster richColors position="top-center" />
           </ThemeProvider>
         </body>
       </html>
