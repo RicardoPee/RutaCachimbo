@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import Confetti from "react-confetti";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useAudio, useWindowSize, useMount } from "react-use";
 
 import { reduceHearts } from "@/actions/user-progress";
@@ -59,7 +59,7 @@ export const Quiz = ({
 
   const router = useRouter();
 
-  const [finishAudio] = useAudio({ src: "/finish.mp3", autoPlay: true });
+  const [finishAudio, _f, finishControls] = useAudio({ src: "/finish.mp3" });
   const [
     correctAudio,
     _c,
@@ -90,6 +90,12 @@ export const Quiz = ({
 
   const challenge = challenges[activeIndex];
   const options = challenge?.challengeOptions ?? [];
+
+  useEffect(() => {
+    if (!challenge && challenges.length > 0) {
+      finishControls.play();
+    }
+  }, [challenge, challenges.length, finishControls]);
 
   const onNext = () => {
     setActiveIndex((current) => current + 1);
@@ -223,7 +229,11 @@ export const Quiz = ({
   if (!challenge) {
     if (challenges.length === 0) {
       return (
-        <div className="flex flex-col gap-y-4 max-w-lg mx-auto text-center items-center justify-center h-full">
+        <>
+          {finishAudio}
+          {correctAudio}
+          {incorrectAudio}
+          <div className="flex flex-col gap-y-4 max-w-lg mx-auto text-center items-center justify-center h-full">
           <h1 className="text-xl lg:text-3xl font-bold text-neutral-700">
             Aún no hay preguntas
           </h1>
@@ -255,12 +265,15 @@ export const Quiz = ({
             </Button>
           )}
         </div>
+        </>
       );
     }
 
     return (
       <>
         {finishAudio}
+        {correctAudio}
+        {incorrectAudio}
         <Confetti
           width={width}
           height={height}
@@ -312,6 +325,7 @@ export const Quiz = ({
 
   return (
     <>
+      {finishAudio}
       {incorrectAudio}
       {correctAudio}
       <Header
