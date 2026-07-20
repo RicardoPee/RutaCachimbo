@@ -44,6 +44,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ModalProvider } from "@/components/modals/modal-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,6 +63,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <ModalProvider />
             <main className="flex-1 flex flex-col">{children}</main>
             <Toaster richColors position="top-center" />
           </ThemeProvider>

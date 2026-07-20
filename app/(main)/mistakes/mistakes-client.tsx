@@ -35,18 +35,18 @@ export const MistakesClient = ({ mistakes }: Props) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lessonTitle: `Error en ${mistake.context}`,
-          challenges: [{ question: mistake.questionText }],
+          questionText: mistake.questionText,
+          context: mistake.context,
         }),
       });
       const data = await res.json();
-      if (data.passage) {
+      if (data.referenceText) {
         setSelectedPassage({
           title: `Lectura: ${mistake.questionText.slice(0, 60)}...`,
-          text: data.passage,
+          text: data.referenceText,
         });
       } else {
-        toast.error("No se pudo sintetizar el pasaje de lectura.");
+        toast.error("No se pudo obtener el pasaje de lectura.");
       }
     } catch (e) {
       toast.error("Error al cargar el pasaje de lectura.");
