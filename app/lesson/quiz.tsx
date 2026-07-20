@@ -406,7 +406,7 @@ export const Quiz = ({
           tweenDuration={10000}
         />
 
-        <div className="max-w-md w-full bg-white dark:bg-slate-900 border-2 border-emerald-400 dark:border-emerald-700/80 rounded-3xl p-6 lg:p-8 shadow-2xl flex flex-col items-center text-center gap-y-6 animate-in zoom-in-95 duration-500 relative z-10">
+        <div className="max-w-lg w-full bg-white dark:bg-slate-900 border-4 border-emerald-400 dark:border-emerald-600 rounded-3xl p-6 lg:p-8 shadow-2xl flex flex-col items-center text-center gap-y-6 animate-in zoom-in-95 duration-500 relative z-10">
           
           {/* Header Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 text-white text-xs font-black uppercase tracking-widest shadow-md">
@@ -442,22 +442,22 @@ export const Quiz = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full font-bold border-2 rounded-2xl"
-              onClick={() => window.location.href = `/lesson/${lessonId}`}
-            >
-              Practicar de nuevo
-            </Button>
+          <div className="flex flex-col items-center gap-3 w-full pt-2">
             <Button
               variant="default"
               size="lg"
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold shadow-lg shadow-emerald-500/20 rounded-2xl flex items-center justify-center gap-2"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-base h-12 shadow-lg shadow-emerald-500/20 rounded-2xl flex items-center justify-center gap-2"
               onClick={() => router.push("/learn")}
             >
-              Continuar al Mapa <ArrowRight className="w-4 h-4" />
+              Continuar al Mapa <ArrowRight className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full font-bold border-2 h-11 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => window.location.href = `/lesson/${lessonId}`}
+            >
+              Practicar de nuevo
             </Button>
           </div>
 
