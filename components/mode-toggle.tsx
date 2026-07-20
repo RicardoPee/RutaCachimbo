@@ -13,7 +13,20 @@ import {
 import { Icons } from "@/components/icons"
 
 export function ModeToggle() {
+  const [mounted, setMounted] = React.useState(false)
   const { setTheme } = useTheme()
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="sm" className="h-8 w-8 px-0" disabled>
+        <div className="h-4 w-4 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { logMistake } from "@/actions/mistakes";
 import { getUserProgress } from "@/db/queries";
 import { calculateNewStreak } from "@/lib/streak";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 import {
   AI_MODEL,
   POINTS_PER_MOCK_EXAM,
@@ -196,6 +197,16 @@ export async function submitMockExam(payload: { answers: Record<number, number |
           lastActive: newLastActive,
           ...(usedFreeze ? { streakFreeze: false } : {}),
         },
+      });
+
+      const totalQuestions = correct + incorrect + blank;
+      const scorePercent = totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0;
+
+      await checkAndUnlockAchievements(userId, {
+        type: "exam",
+        examScore: scorePercent,
+        examTimeSpent: timeSpent,
+        streakValue: newStreak
       });
     }
 

@@ -1,10 +1,22 @@
-"use client"
+"use client";
 
+import { useState, useEffect } from "react";
 import { SignIn, ClerkLoading } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Loader } from "lucide-react";
+import { useTheme } from "next-themes";
+import { dark } from "@clerk/themes";
 
 export default function Login() {
+  const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const clerkTheme = mounted && theme === "dark" ? dark : undefined;
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <motion.div
@@ -25,6 +37,9 @@ export default function Login() {
           routing="hash"
           signUpUrl="/registro"
           fallbackRedirectUrl="/learn"
+          appearance={{
+            baseTheme: clerkTheme,
+          }}
         />
       </motion.div>
     </div>

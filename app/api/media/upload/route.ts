@@ -1,17 +1,29 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import cloudinary from "@/lib/cloudinary";
+import { prisma } from "@/lib/prisma";
 import { isAdminId } from "@/lib/admin";
 
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
-    if (!isAdminId(userId)) {
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const progress = await prisma.userProgress.findUnique({
+      where: { userId }
+    });
+    const isTeacher = progress?.isTeacher === true;
+
+    if (!isAdminId(userId) && !isTeacher) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
+    const classroomIdStr = formData.get("classroomId") as string | null;
+    
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
@@ -32,9 +44,22 @@ export async function POST(req: Request) {
       public_id: `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`,
     });
 
+    const classroomId = classroomIdStr ? parseInt(classroomIdStr) : null;
+
+    // Save PDF/Media Document to DB
+    const doc = await prisma.pdfDocument.create({
+      data: {
+        title: file.name,
+        url: result.secure_url,
+        classroomId: classroomId && !isNaN(classroomId) ? classroomId : null,
+        userId: userId
+      }
+    });
+
     return NextResponse.json({ 
       url: result.secure_url,
       publicId: result.public_id,
+      id: doc.id
     });
   } catch (error) {
     console.error("Upload error:", error);

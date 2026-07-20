@@ -7,13 +7,20 @@ import { getMockExamQuestions } from "./mock-exam-actions";
 import { pusherServer } from "@/lib/pusher";
 import { PVP_POINTS_PER_CORRECT, PVP_NEGOTIATION_TIMEOUT_MS } from "@/constants";
 
-const triggerMatchUpdate = async (matchId: number) => {
+const triggerMatchUpdate = async (matchId: number, retries = 3) => {
   if (pusherServer) {
-    try {
-      await pusherServer.trigger(`match-${matchId}`, "match-updated", {});
-    } catch (e) {
-      console.error("Pusher trigger error", e);
+    for (let i = 0; i < retries; i++) {
+      try {
+        await pusherServer.trigger(`match-${matchId}`, "match-updated", {});
+        return;
+      } catch (e) {
+        console.error(`Pusher trigger error (Attempt ${i + 1}/${retries})`, e);
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 500));
+        }
+      }
     }
+    console.error(`[CRITICAL] Pusher falló al actualizar la sala ${matchId} después de ${retries} intentos`);
   }
 };
 
@@ -104,6 +111,12 @@ export async function proposeWager(matchId: number, wager: number) {
   const match = await prisma.pvpMatch.findUnique({ where: { id: matchId } });
   if (!match || match.status !== "NEGOTIATING") return { error: "No en fase de negociación" };
 
+  // Validar saldo del jugador antes de proponer
+  const progress = await prisma.userProgress.findUnique({ where: { userId } });
+  if (!progress || progress.points < wager) {
+    return { error: `No tienes suficientes puntos (${progress?.points || 0} XP) para apostar ${wager} XP.` };
+  }
+
   const isP1 = match.player1Id === userId;
   await prisma.pvpMatch.update({
     where: { id: matchId },
@@ -122,6 +135,12 @@ export async function acceptWager(matchId: number) {
   
   const agreedWager = isP1 ? match.p2WagerProposal : match.p1WagerProposal;
   if (agreedWager === null) return { error: "No hay propuesta rival" };
+
+  // Validar saldo del jugador antes de aceptar
+  const progress = await prisma.userProgress.findUnique({ where: { userId } });
+  if (!progress || progress.points < agreedWager) {
+    return { error: `No tienes suficientes puntos (${progress?.points || 0} XP) para aceptar una apuesta de ${agreedWager} XP.` };
+  }
 
   await prisma.pvpMatch.update({
     where: { id: matchId },
@@ -184,6 +203,11 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
     const loserId = winnerId === match.player1Id ? match.player2Id : winnerId === match.player2Id ? match.player1Id : null;
 
     if (wager > 0 && winnerId && loserId) {
+      // Prevenir puntos negativos calculando el saldo real del perdedor
+      const loserProgress = await prisma.userProgress.findUnique({ where: { userId: loserId } });
+      const loserPoints = loserProgress?.points || 0;
+      const safeDeduction = Math.min(loserPoints, wager);
+
       operations.push(
         prisma.userProgress.updateMany({
           where: { userId: winnerId },
@@ -191,7 +215,7 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
         }),
         prisma.userProgress.updateMany({
           where: { userId: loserId },
-          data: { points: { decrement: wager } },
+          data: { points: { decrement: safeDeduction } },
         }),
       );
     }

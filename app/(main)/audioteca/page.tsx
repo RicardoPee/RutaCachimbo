@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getUserProgress, getUserSubscription } from "@/db/queries";
+import { getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
@@ -10,13 +10,16 @@ import { AudiotecaClient } from "./audioteca-client";
 const AudiotecaPage = async () => {
   const userProgressData = getUserProgress();
   const userSubscriptionData = getUserSubscription();
+  const dynamicQuestsData = getDynamicQuests();
 
   const [
     userProgress,
     userSubscription,
+    dynamicQuests,
   ] = await Promise.all([
     userProgressData,
-    userSubscriptionData
+    userSubscriptionData,
+    dynamicQuestsData,
   ]);
 
   if (!userProgress || !userProgress.activeCourse) {
@@ -36,7 +39,7 @@ const AudiotecaPage = async () => {
           streak={userProgress.streak}
         />
         {!isPro && <Promo />}
-        <Quests points={userProgress.weeklyPoints} />
+        <Quests quests={dynamicQuests} />
       </StickyWrapper>
       <FeedWrapper>
         <AudiotecaClient />

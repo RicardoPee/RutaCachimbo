@@ -140,16 +140,6 @@ export const Sidebar = async ({ className }: Props) => {
 
         <SectionLabel>Mi progreso</SectionLabel>
         <SidebarItem
-          label="Misiones"
-          href="/quests"
-          icon={<Target className="w-6 h-6 text-orange-500" />}
-        />
-        <SidebarItem
-          label="Logros"
-          href="/logros"
-          icon={<Trophy className="w-6 h-6 text-yellow-400" />}
-        />
-        <SidebarItem
           label="Progreso"
           href="/progress"
           icon={<TrendingUp className="w-6 h-6 text-blue-500" />}
@@ -180,12 +170,7 @@ export const Sidebar = async ({ className }: Props) => {
               icon={<LayoutDashboard className="w-5 h-5 text-slate-500" />}
             />
             <SidebarItem
-              label="Subir PDF (IA)"
-              href="/admin/upload"
-              icon={<UploadCloud className="w-5 h-5 text-slate-500" />}
-            />
-            <SidebarItem
-              label="Gestor de Archivos"
+              label="Gestor de Archivos e IA"
               href="/admin/media"
               icon={<FolderUp className="w-5 h-5 text-slate-500" />}
             />

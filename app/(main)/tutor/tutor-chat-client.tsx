@@ -46,7 +46,7 @@ export const TutorChatClient = ({ league = "BRONCE", points = 0 }: Props) => {
       });
 
       if (!res.ok) {
-        toast.error("Error al conectar con Gemini 2.5 Flash.");
+        toast.error("Error al conectar con el Tutor IA.");
         setIsLoading(false);
         return;
       }
@@ -71,7 +71,7 @@ export const TutorChatClient = ({ league = "BRONCE", points = 0 }: Props) => {
         });
       }
     } catch (error: any) {
-      toast.error("Hubo un corte en la conexión neuronal con Gemini: " + error.message);
+      toast.error("Hubo un corte en la conexión con el Tutor IA: " + error.message);
     } finally {
       setIsLoading(false);
     }

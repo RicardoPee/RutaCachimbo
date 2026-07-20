@@ -4,8 +4,10 @@ import {
   getUserProgress, 
   getUserSubscription, 
   getCompletedChallengesCount, 
-  getTopTenUsers 
+  getTopTenUsers,
+  getDynamicQuests
 } from "@/db/queries";
+import { getUserAchievements } from "@/actions/achievement-actions";
 import { ProgressClient } from "./progress-client";
 
 const ProgressPage = async () => {
@@ -19,17 +21,23 @@ const ProgressPage = async () => {
   const userSubscriptionData = getUserSubscription();
   const completedChallengesData = getCompletedChallengesCount();
   const topWeeklyUsersData = getTopTenUsers("WEEKLY");
+  const achievementsData = getUserAchievements();
+  const dynamicQuestsData = getDynamicQuests();
 
   const [
     userProgress,
     userSubscription,
     completedChallengesCount,
     topWeeklyUsers,
+    achievements,
+    dynamicQuests,
   ] = await Promise.all([
     userProgressData,
     userSubscriptionData,
     completedChallengesData,
     topWeeklyUsersData,
+    achievementsData,
+    dynamicQuestsData,
   ]);
 
   if (!userProgress || !userProgress.activeCourse) {
@@ -48,6 +56,8 @@ const ProgressPage = async () => {
       isPro={isPro}
       completedChallengesCount={completedChallengesCount}
       weeklyRank={weeklyRank}
+      achievements={achievements}
+      dynamicQuests={dynamicQuests}
     />
   );
 };

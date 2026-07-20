@@ -38,6 +38,7 @@ const LessonPage = async () => {
       userSubscription={userSubscription}
       referenceText={lesson.referenceText}
       isAdmin={isAdmin()}
+      userProgress={userProgress}
     />
   );
 };

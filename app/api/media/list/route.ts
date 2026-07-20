@@ -1,53 +1,75 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import cloudinary from "@/lib/cloudinary";
+import { prisma } from "@/lib/prisma";
 import { isAdminId } from "@/lib/admin";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const { userId } = auth();
-    if (!isAdminId(userId)) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch all resources from the rutacachimbo folder
-    const [images, videos, raws] = await Promise.all([
-      cloudinary.api.resources({
-        type: "upload",
-        prefix: "rutacachimbo",
-        resource_type: "image",
-        max_results: 100,
-      }).catch(() => ({ resources: [] })),
-      cloudinary.api.resources({
-        type: "upload",
-        prefix: "rutacachimbo",
-        resource_type: "video",
-        max_results: 100,
-      }).catch(() => ({ resources: [] })),
-      cloudinary.api.resources({
-        type: "upload",
-        prefix: "rutacachimbo",
-        resource_type: "raw",
-        max_results: 100,
-      }).catch(() => ({ resources: [] })),
-    ]);
+    const progress = await prisma.userProgress.findUnique({
+      where: { userId }
+    });
+    const isTeacher = progress?.isTeacher === true;
+    const isUserAdmin = isAdminId(userId);
 
-    const allResources = [
-      ...images.resources.map((r: any) => ({ ...r, _type: "image" })),
-      ...videos.resources.map((r: any) => ({ ...r, _type: "audio" })),
-      ...raws.resources.map((r: any) => ({ ...r, _type: "documento" })),
-    ];
+    if (!isUserAdmin && !isTeacher) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const mediaFiles = allResources
-      .map((r: any) => ({
-        url: r.secure_url,
-        name: r.public_id.replace("rutacachimbo/", ""),
-        isImage: r._type === "image",
-        type: r._type,
-        size: r.bytes,
-        createdAt: r.created_at,
-      }))
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    let filesList;
+
+    if (isUserAdmin) {
+      filesList = await prisma.pdfDocument.findMany({
+        orderBy: { createdAt: "desc" }
+      });
+    } else {
+      // Obtener las aulas administradas por este profesor
+      const myClassrooms = await prisma.classroom.findMany({
+        where: { teacherId: userId },
+        select: { id: true }
+      });
+      const classroomIds = myClassrooms.map((c) => c.id);
+
+      filesList = await prisma.pdfDocument.findMany({
+        where: {
+          OR: [
+            { userId: userId },
+            { classroomId: { in: classroomIds } }
+          ]
+        },
+        orderBy: { createdAt: "desc" }
+      });
+    }
+
+    const mediaFiles = filesList.map((doc) => {
+      const urlLower = doc.url.toLowerCase();
+      const isImage = 
+        urlLower.includes(".png") || 
+        urlLower.includes(".jpg") || 
+        urlLower.includes(".jpeg") || 
+        urlLower.includes(".webp") || 
+        urlLower.includes(".gif");
+      const isAudio = 
+        urlLower.includes(".mp3") || 
+        urlLower.includes(".wav") || 
+        urlLower.includes(".aac") || 
+        urlLower.includes(".m4a") || 
+        urlLower.includes(".ogg");
+
+      return {
+        url: doc.url,
+        name: doc.title,
+        isImage,
+        type: isImage ? "image" : isAudio ? "audio" : "documento",
+        createdAt: doc.createdAt.toISOString()
+      };
+    });
 
     return NextResponse.json({ files: mediaFiles });
   } catch (error) {

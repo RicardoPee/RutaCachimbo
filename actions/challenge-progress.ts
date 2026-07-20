@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
 import { calculateNewStreak } from "@/lib/streak";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 import { POINTS_PER_CHALLENGE, MAX_HEARTS } from "@/constants";
 
 export const upsertChallengeProgress = async (challengeId: number) => {
@@ -52,9 +53,19 @@ export const upsertChallengeProgress = async (challengeId: number) => {
     currentUserProgress.streakFreeze
   );
 
+  let pointsEarned = POINTS_PER_CHALLENGE;
+  if (newStreak > 1) {
+    pointsEarned += newStreak * 2; // Racha bonus: streak * 2
+  }
+
+  const isXpBoosted = currentUserProgress.xpBoosterEndsAt && new Date(currentUserProgress.xpBoosterEndsAt) > new Date();
+  if (isXpBoosted) {
+    pointsEarned *= 2; // Poción Doble XP
+  }
+
   const progressUpdate = {
-    points: currentUserProgress.points + POINTS_PER_CHALLENGE,
-    weeklyPoints: currentUserProgress.weeklyPoints + POINTS_PER_CHALLENGE,
+    points: currentUserProgress.points + pointsEarned,
+    weeklyPoints: currentUserProgress.weeklyPoints + pointsEarned,
     streak: newStreak,
     lastActive: newLastActive,
     ...(usedFreeze ? { streakFreeze: false } : {}),
@@ -84,6 +95,17 @@ export const upsertChallengeProgress = async (challengeId: number) => {
         data: progressUpdate,
       }),
     ]);
+  }
+
+  // Verificar logros desbloqueados
+  const newlyUnlocked = await checkAndUnlockAchievements(userId, {
+    type: "challenge",
+    streakValue: newStreak
+  });
+
+  if (newlyUnlocked.length > 0) {
+    // Si hay logros desbloqueados, informamos al cliente de forma amigable
+    return { success: true, newlyUnlocked };
   }
 
   revalidatePath("/learn");

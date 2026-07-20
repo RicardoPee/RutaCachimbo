@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ClerkLoaded, ClerkLoading, UserButton } from "@clerk/nextjs";
 import { Loader, Moon, Sun, Monitor, GraduationCap, ShieldAlert } from "lucide-react";
 import { useTheme } from "next-themes";
+import { dark } from "@clerk/themes";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -19,7 +21,12 @@ type Props = {
 };
 
 export const UserProfileMenuClient = ({ isAdmin, isTeacher }: Props) => {
-  const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   let roleLabel = "Usuario";
   let roleIcon = null;
@@ -35,6 +42,19 @@ export const UserProfileMenuClient = ({ isAdmin, isTeacher }: Props) => {
     badgeColor = "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400";
   }
 
+  if (!mounted) {
+    return (
+      <div className="p-4 flex items-center justify-between border-t-2 dark:border-border">
+        <div className="flex items-center gap-x-3">
+          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
+          <div className="w-20 h-6 bg-slate-200 dark:bg-slate-800 rounded-md animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  const clerkTheme = theme === "dark" ? dark : undefined;
+
   return (
     <div className="p-4 flex items-center justify-between border-t-2 dark:border-border">
       <div className="flex items-center gap-x-3">
@@ -42,7 +62,12 @@ export const UserProfileMenuClient = ({ isAdmin, isTeacher }: Props) => {
           <Loader className="h-5 w-5 text-muted-foreground animate-spin" />
         </ClerkLoading>
         <ClerkLoaded>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton 
+            afterSignOutUrl="/" 
+            appearance={{
+              baseTheme: clerkTheme
+            }}
+          />
         </ClerkLoaded>
 
         <DropdownMenu>

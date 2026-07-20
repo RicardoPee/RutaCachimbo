@@ -5,7 +5,7 @@ import { Promo } from "@/components/promo";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
-import { getUserProgress, getUserSubscription } from "@/db/queries";
+import { getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
 
 import { Items } from "./items";
 import { Quests } from "@/components/quests";
@@ -13,13 +13,16 @@ import { Quests } from "@/components/quests";
 const ShopPage = async () => {
   const userProgressData = getUserProgress();
   const userSubscriptionData = getUserSubscription();
+  const dynamicQuestsData = getDynamicQuests();
 
   const [
     userProgress,
     userSubscription,
+    dynamicQuests,
   ] = await Promise.all([
     userProgressData,
-    userSubscriptionData
+    userSubscriptionData,
+    dynamicQuestsData,
   ]);
 
   if (!userProgress || !userProgress.activeCourse) {
@@ -41,7 +44,7 @@ const ShopPage = async () => {
         {!isPro && (
           <Promo />
         )}
-        <Quests points={userProgress.weeklyPoints} />
+        <Quests quests={dynamicQuests} />
       </StickyWrapper>
       <FeedWrapper>
         <div className="w-full flex flex-col items-center">
@@ -51,21 +54,30 @@ const ShopPage = async () => {
             height={90}
             width={90}
           />
-          <h1 className="text-center font-bold text-neutral-800 text-2xl my-6">
-            Tienda
+          <h1 className="text-center font-extrabold text-neutral-800 dark:text-white text-3xl my-4">
+            Tienda Cachimbo
           </h1>
-          <p className="text-muted-foreground text-center text-lg mb-6">
-            Gasta tus puntos en cosas geniales.
+          <p className="text-muted-foreground text-center text-base mb-8 max-w-[520px]">
+            Equípate con comodines estratégicos para tus exámenes, personaliza tu mascota acompañante y desbloquea atuendos únicos.
           </p>
           <Items
             hearts={userProgress.hearts}
             points={userProgress.points}
             hasActiveSubscription={isPro}
-          streak={userProgress.streak}
+            streak={userProgress.streak}
             streakFreeze={userProgress.streakFreeze}
             xpBoosterEndsAt={userProgress.xpBoosterEndsAt}
             ownedBorders={userProgress.ownedBorders || []}
             activeBorder={userProgress.activeBorder}
+            userImageSrc={userProgress.userImageSrc || "/mascot.svg"}
+            userName={userProgress.userName || "Estudiante"}
+            ownedTitles={userProgress.ownedTitles || []}
+            activeTitle={userProgress.activeTitle}
+            cardFiftyFifty={userProgress.cardFiftyFifty || 0}
+            cardAiHint={userProgress.cardAiHint || 0}
+            cardHeartShield={userProgress.cardHeartShield || 0}
+            activeMascotSkin={userProgress.activeMascotSkin || "default"}
+            ownedMascotSkins={userProgress.ownedMascotSkins || ["default"]}
           />
         </div>
       </FeedWrapper>

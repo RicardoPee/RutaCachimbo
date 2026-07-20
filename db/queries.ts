@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { prisma } from "@/lib/prisma";
 import { isAdminId } from "@/lib/admin";
+import { MAX_HEARTS } from "@/constants";
 
 export const getUserProgress = cache(async () => {
   const { userId } = auth();
@@ -11,15 +12,36 @@ export const getUserProgress = cache(async () => {
     return null;
   }
 
-  const data = await prisma.userProgress.findUnique({
+  let data = await prisma.userProgress.findUnique({
     where: { userId },
     include: {
       activeCourse: true,
     },
   });
 
+  if (!data) return null;
+
+  // Auto-refill pasivo diario de corazones (después de 24 horas)
+  if (data.hearts < MAX_HEARTS) {
+    const lastActiveTime = data.lastActive ? new Date(data.lastActive).getTime() : 0;
+    const now = Date.now();
+    const isNextDay = (now - lastActiveTime) >= 24 * 60 * 60 * 1000;
+
+    if (isNextDay) {
+      try {
+        await prisma.userProgress.update({
+          where: { userId },
+          data: { hearts: MAX_HEARTS },
+        });
+        data.hearts = MAX_HEARTS;
+      } catch (err) {
+        console.error("Error auto-refilling hearts:", err);
+      }
+    }
+  }
+
   // El admin tiene corazones ilimitados para poder probar contenido
-  if (data && isAdminId(userId)) {
+  if (isAdminId(userId)) {
     return { ...data, hearts: Infinity };
   }
 
@@ -83,6 +105,7 @@ export const getCourses = cache(async () => {
   if (!userId) {
     return await prisma.course.findMany({
       where: { classroomId: null },
+      include: { classroom: true },
     });
   }
 
@@ -95,6 +118,7 @@ export const getCourses = cache(async () => {
   if (classroomIds.length === 0) {
     return await prisma.course.findMany({
       where: { classroomId: null },
+      include: { classroom: true },
     });
   }
 
@@ -104,6 +128,9 @@ export const getCourses = cache(async () => {
         { classroomId: null },
         { classroomId: { in: classroomIds } },
       ],
+    },
+    include: {
+      classroom: true,
     },
   });
 });
@@ -307,10 +334,86 @@ export const getTopTenUsers = cache(async (
       weeklyPoints: true,
       league: true,
       activeBorder: true,
+      activeTitle: true,
     },
     orderBy: timeframe === "WEEKLY"
       ? { weeklyPoints: "desc" }
       : { points: "desc" },
     take: 50,
   });
+});
+
+export const getDynamicQuests = cache(async () => {
+  const { userId } = auth();
+  if (!userId) return [];
+
+  const userProgress = await prisma.userProgress.findUnique({
+    where: { userId },
+  });
+
+  if (!userProgress) return [];
+
+  // Calcular inicio de la semana (Lunes a las 00:00:00)
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  const startOfWeek = new Date(now.setDate(diff));
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  // Misión 2: Conteo de simulacros resueltos esta semana
+  const weeklyExamsCount = await prisma.mockExamResult.count({
+    where: {
+      userId,
+      createdAt: { gte: startOfWeek }
+    }
+  });
+
+  // Misión 4: Conteo de respuestas correctas esta semana
+  const weeklyCorrectChallengesCount = await prisma.challengeProgress.count({
+    where: {
+      userId,
+      completed: true,
+      updatedAt: { gte: startOfWeek }
+    }
+  });
+
+  const weeklyPoints = userProgress.weeklyPoints;
+  const streak = userProgress.streak ?? 0;
+
+  const dynamicQuestsList = [
+    {
+      title: "Gana 200 XP esta semana",
+      value: 200,
+      currentValue: weeklyPoints,
+      isCompleted: weeklyPoints >= 200,
+      progressPercentage: Math.min((weeklyPoints / 200) * 100, 100),
+      type: "XP"
+    },
+    {
+      title: "Realiza 2 simulacros esta semana",
+      value: 2,
+      currentValue: weeklyExamsCount,
+      isCompleted: weeklyExamsCount >= 2,
+      progressPercentage: Math.min((weeklyExamsCount / 2) * 100, 100),
+      type: "EXAMS"
+    },
+    {
+      title: "Consigue una racha de 3 días",
+      value: 3,
+      currentValue: streak,
+      isCompleted: streak >= 3,
+      progressPercentage: Math.min((streak / 3) * 100, 100),
+      type: "STREAK"
+    },
+    {
+      title: "Responde 15 preguntas correctas esta semana",
+      value: 15,
+      currentValue: weeklyCorrectChallengesCount,
+      isCompleted: weeklyCorrectChallengesCount >= 15,
+      progressPercentage: Math.min((weeklyCorrectChallengesCount / 15) * 100, 100),
+      type: "CHALLENGES"
+    }
+  ];
+
+  return dynamicQuestsList;
 });

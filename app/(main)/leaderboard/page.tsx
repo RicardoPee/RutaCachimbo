@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
-import { getTopTenUsers, getUserProgress, getUserSubscription } from "@/db/queries";
+import { getTopTenUsers, getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
 import { Promo } from "@/components/promo";
 import { Quests } from "@/components/quests";
 import { LeaderboardClient } from "@/components/leaderboard-client";
@@ -16,17 +16,20 @@ const LearderboardPage = async () => {
   const userSubscriptionData = getUserSubscription();
   const leaderboardAllTimeData = getTopTenUsers("ALL_TIME");
   const leaderboardWeeklyData = getTopTenUsers("WEEKLY");
+  const dynamicQuestsData = getDynamicQuests();
 
   const [
     userProgress,
     userSubscription,
     leaderboardAllTime,
     leaderboardWeekly,
+    dynamicQuests,
   ] = await Promise.all([
     userProgressData,
     userSubscriptionData,
     leaderboardAllTimeData,
     leaderboardWeeklyData,
+    dynamicQuestsData,
   ]);
 
   if (!userProgress || !userProgress.activeCourse || !userId) {
@@ -48,7 +51,7 @@ const LearderboardPage = async () => {
         {!isPro && (
           <Promo />
         )}
-        <Quests points={userProgress.weeklyPoints} />
+        <Quests quests={dynamicQuests} />
       </StickyWrapper>
       <FeedWrapper>
         <div className="w-full flex flex-col items-center">

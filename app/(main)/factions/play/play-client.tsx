@@ -45,7 +45,7 @@ export const PlayClient = ({ currentUser }: any) => {
 
       if (state.phase === "FINISHED") {
         const board = await getTournamentLeaderboard(state.id);
-        setLeaderboard(board);
+        setLeaderboard(board.data);
       }
     };
 

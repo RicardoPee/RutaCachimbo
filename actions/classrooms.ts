@@ -67,3 +67,28 @@ export const joinClassroom = async (inviteCode: string) => {
 
   return { success: true, classroomName: classroom.name };
 };
+
+export const createClassroomCourse = async (classroomId: number, title: string) => {
+  const { userId } = auth();
+  if (!userId) throw new Error("No estás autenticado.");
+
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId }
+  });
+
+  if (!classroom || classroom.teacherId !== userId) {
+    throw new Error("No tienes permisos para esta aula.");
+  }
+
+  const course = await prisma.course.create({
+    data: {
+      title,
+      imageSrc: "/mascot.svg",
+      classroomId: classroom.id
+    }
+  });
+
+  revalidatePath("/teacher/classrooms");
+  revalidatePath("/courses");
+  return course;
+};

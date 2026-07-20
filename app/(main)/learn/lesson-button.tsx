@@ -100,7 +100,7 @@ export const LessonButton = ({
             <Button
               size="rounded"
               variant={btnVariant as any}
-              className="h-[80px] w-[80px] border-b-8 shadow-xl shadow-green-500/30 hover:scale-[1.15] hover:shadow-2xl transition-all duration-300 animate-pulse relative z-0"
+              className="h-[80px] w-[80px] border-b-8 shadow-xl shadow-green-500/30 hover:scale-[1.15] hover:shadow-2xl transition-all duration-300 animate-pulse-slow relative z-0"
             >
                 <Icon
                   className={cn(

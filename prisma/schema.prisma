@@ -52,6 +52,7 @@ model Classroom {
   inviteCode  String            @unique @map("invite_code")
   members     ClassroomMember[]
   courses     Course[]
+  pdfDocuments PdfDocument[]
 
   @@map("classrooms")
 }
@@ -92,12 +93,14 @@ model Unit {
 }
 
 model Lesson {
-  id            Int         @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   title         String
-  unitId        Int         @map("unit_id")
+  unitId        Int          @map("unit_id")
   order         Int
-  referenceText String?     @map("reference_text")
-  unit          Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  referenceText String?      @map("reference_text")
+  pdfDocumentId Int?         @map("pdf_document_id")
+  unit          Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  pdfDocument   PdfDocument? @relation(fields: [pdfDocumentId], references: [id], onDelete: SetNull)
   challenges    Challenge[]
 
   @@map("lessons")
@@ -134,6 +137,7 @@ model ChallengeProgress {
   userId      String    @map("user_id")
   challengeId Int       @map("challenge_id")
   completed   Boolean   @default(false)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
@@ -158,6 +162,16 @@ model UserProgress {
   streakFreeze       Boolean              @default(false) @map("streak_freeze")
   xpBoosterEndsAt    DateTime?            @map("xp_booster_ends_at")
   ownedBorders       String[]             @default([]) @map("owned_borders")
+  ownedTitles        String[]             @default([]) @map("owned_titles")
+  activeTitle        String?              @map("active_title")
+
+  // Mascota Acompañante y Cartas de Poder
+  activeMascotSkin   String?              @default("default") @map("active_mascot_skin")
+  ownedMascotSkins   String[]             @default(["default"]) @map("owned_mascot_skins")
+  cardFiftyFifty     Int                  @default(0) @map("card_fifty_fifty")
+  cardAiHint         Int                  @default(0) @map("card_ai_hint")
+  cardHeartShield    Int                  @default(0) @map("card_heart_shield")
+
   streak             Int                  @default(0)
   lastActive         DateTime?            @default(now()) @map("last_active")
   unlockedAchievements String[]           @default([]) @map("unlocked_achievements")
@@ -196,10 +210,14 @@ model UserSubscription {
 }
 
 model PdfDocument {
-  id        Int      @id @default(autoincrement())
-  title     String
-  url       String
-  createdAt DateTime @default(now()) @map("created_at")
+  id          Int        @id @default(autoincrement())
+  title       String
+  url         String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  classroomId Int?       @map("classroom_id")
+  userId      String?    @map("user_id")
+  classroom   Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
 
   @@map("pdf_documents")
 }

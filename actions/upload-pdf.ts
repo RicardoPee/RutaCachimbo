@@ -215,19 +215,44 @@ export const parsePdfWithAI = async (formData: FormData) => {
   }
 };
 
-export const saveReviewedContent = async (payload: { classroomIdStr: string | null, result: any }) => {
+export const saveReviewedContent = async (payload: { classroomIdStr: string | null, courseIdStr?: string | null, result: any }) => {
   const { userId } = auth();
   if (!userId) return { error: "No autorizado." };
 
-  const { classroomIdStr, result } = payload;
-  if (!classroomIdStr && !isAdmin()) {
+  const { classroomIdStr, courseIdStr, result } = payload;
+  if (!classroomIdStr && !courseIdStr && !isAdmin()) {
     return { error: "Solo los administradores pueden subir PDFs globales." };
   }
 
   try {
     let difficultyToUnitId: Record<string, number> = { BASICO: 1, INTERMEDIO: 2, AVANZADO: 3 };
 
-    if (classroomIdStr) {
+    if (courseIdStr) {
+      const courseId = parseInt(courseIdStr);
+      const course = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: { classroom: true }
+      });
+      if (!course) return { error: "Curso no encontrado." };
+
+      if (course.classroom && course.classroom.teacherId !== userId && !isAdmin()) {
+        return { error: "No tienes permisos para modificar este curso." };
+      }
+
+      let units = await prisma.unit.findMany({ where: { courseId } });
+      if (units.length === 0) {
+        const unitBasic = await prisma.unit.create({ data: { title: "Nivel Básico", description: "Preguntas literales", courseId, order: 1 } });
+        const unitInter = await prisma.unit.create({ data: { title: "Nivel Intermedio", description: "Preguntas inferenciales", courseId, order: 2 } });
+        const unitAdv = await prisma.unit.create({ data: { title: "Nivel Avanzado", description: "Análisis crítico", courseId, order: 3 } });
+        units = [unitBasic, unitInter, unitAdv];
+      }
+
+      difficultyToUnitId = {
+        BASICO: units.find(u => u.title.includes("Básico"))?.id || units[0]?.id || 1,
+        INTERMEDIO: units.find(u => u.title.includes("Intermedio"))?.id || units[0]?.id || 2,
+        AVANZADO: units.find(u => u.title.includes("Avanzado"))?.id || units[0]?.id || 3,
+      };
+    } else if (classroomIdStr) {
       const classroomId = parseInt(classroomIdStr);
       const classroom = await prisma.classroom.findUnique({ where: { id: classroomId } });
       if (!classroom || classroom.teacherId !== userId) return { error: "Aula no encontrada." };
@@ -261,6 +286,32 @@ export const saveReviewedContent = async (payload: { classroomIdStr: string | nu
       }
     }
 
+    let finalClassroomId: number | null = null;
+    if (courseIdStr) {
+      const courseId = parseInt(courseIdStr);
+      const course = await prisma.course.findUnique({ where: { id: courseId } });
+      if (course?.classroomId) {
+        finalClassroomId = course.classroomId;
+      }
+    } else if (classroomIdStr) {
+      finalClassroomId = parseInt(classroomIdStr);
+    }
+
+    // Crear el registro de PDF Documento primero para tener su ID
+    let pdfDoc = null;
+    const pdfUrl = result.__pdfUrl;
+    const pdfName = result.__pdfName || result.examTitle || "Examen Subido (IA)";
+    if (pdfUrl) {
+      pdfDoc = await prisma.pdfDocument.create({
+        data: {
+          title: pdfName,
+          url: pdfUrl,
+          classroomId: finalClassroomId && !isNaN(finalClassroomId) ? finalClassroomId : null,
+          userId: userId
+        }
+      });
+    }
+
     const existingLessons = await prisma.lesson.findMany();
     const maxOrderPerUnit: Record<number, number> = {};
     for (const l of existingLessons) {
@@ -280,12 +331,17 @@ export const saveReviewedContent = async (payload: { classroomIdStr: string | nu
       maxOrderPerUnit[targetUnitId] = (maxOrderPerUnit[targetUnitId] || 0) + 1;
       const lessonOrder = maxOrderPerUnit[targetUnitId];
 
+      const textToSave = (passage.fullText && passage.fullText.trim().length > 30)
+        ? passage.fullText.trim()
+        : `Texto de lectura para: ${passage.passageTitle || 'Comprensión Lectora'}.\n\nEste pasaje fue procesado para análisis de preguntas de comprensión lectora.`;
+
       const insertedLesson = await prisma.lesson.create({
         data: {
           unitId: targetUnitId,
           title: passage.passageTitle || `Lectura ${i + 1}`,
           order: lessonOrder,
-          referenceText: passage.fullText || "",
+          referenceText: textToSave,
+          pdfDocumentId: pdfDoc ? pdfDoc.id : null
         }
       });
       totalPassages++;
@@ -318,18 +374,6 @@ export const saveReviewedContent = async (payload: { classroomIdStr: string | nu
       }
     }
 
-    // Save PDF Document to the new "Drive" table
-    const pdfUrl = result.__pdfUrl;
-    const pdfName = result.__pdfName || result.examTitle || "Examen Subido (IA)";
-    if (pdfUrl) {
-      await prisma.pdfDocument.create({
-        data: {
-          title: pdfName,
-          url: pdfUrl
-        }
-      });
-    }
-
     revalidatePath("/learn");
     revalidatePath("/admin");
     revalidatePath("/archivos");
@@ -346,5 +390,6 @@ export const processPdfExam = async (formData: FormData) => {
   if (parsed.error || !parsed.data) return parsed;
   
   const classroomIdStr = formData.get("classroomId") as string | null;
-  return saveReviewedContent({ classroomIdStr, result: parsed.data });
+  const courseIdStr = formData.get("courseId") as string | null;
+  return saveReviewedContent({ classroomIdStr, courseIdStr, result: parsed.data });
 };

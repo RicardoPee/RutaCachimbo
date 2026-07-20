@@ -9,6 +9,7 @@ type Props = {
   status: "correct" | "wrong" | "none";
   selectedOption?: number;
   disabled?: boolean;
+  disabledOptionIds?: number[];
   type: ChallengeModel["type"];
   isAdmin?: boolean;
 };
@@ -19,6 +20,7 @@ export const Challenge = ({
   status,
   selectedOption,
   disabled,
+  disabledOptionIds = [],
   type,
   isAdmin,
 }: Props) => {
@@ -41,6 +43,7 @@ export const Challenge = ({
           status={status}
           audioSrc={option.audioSrc}
           disabled={disabled}
+          is5050Disabled={disabledOptionIds.includes(option.id)}
           type={type}
           isCorrect={option.correct}
           isAdmin={isAdmin}

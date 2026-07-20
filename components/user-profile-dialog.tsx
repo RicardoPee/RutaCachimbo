@@ -7,7 +7,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Heart, Star } from "lucide-react";
+import { Trophy, Star, Award } from "lucide-react";
+import { getBorderStyles, getTitleById } from "@/lib/shop-catalog";
 
 type UserProfileDialogProps = {
   isOpen: boolean;
@@ -16,19 +17,15 @@ type UserProfileDialogProps = {
 };
 
 export const UserProfileDialog = ({ isOpen, setIsOpen, user }: UserProfileDialogProps) => {
-  const getBorderStyles = (borderName?: string) => {
-    if (borderName === "fire") return "border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.8)] dark:bg-rose-950 bg-rose-50";
-    if (borderName === "ice") return "border-cyan-500 shadow-[0_0_20px_rgba(6,182,214,0.8)] dark:bg-cyan-950 bg-cyan-50";
-    if (borderName === "gold") return "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)] dark:bg-yellow-950 bg-yellow-50";
-    return "border-slate-200 dark:border-slate-700 bg-muted";
-  };
   if (!user) return null;
 
+  const titleObj = getTitleById(user.activeTitle);
+
   const leagueColors: Record<string, string> = {
-    "BRONCE": "text-orange-700 bg-orange-100",
-    "PLATA": "text-slate-500 bg-slate-100",
-    "ORO": "text-yellow-600 bg-yellow-100",
-    "DIAMANTE": "text-cyan-500 bg-cyan-100",
+    "BRONCE": "text-orange-700 bg-orange-100 dark:bg-orange-950/50 dark:text-orange-300",
+    "PLATA": "text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300",
+    "ORO": "text-yellow-700 bg-yellow-100 dark:bg-yellow-950/50 dark:text-yellow-300",
+    "DIAMANTE": "text-cyan-600 bg-cyan-100 dark:bg-cyan-950/50 dark:text-cyan-300",
   };
 
   const leagueColor = leagueColors[user.league as string] || leagueColors["BRONCE"];
@@ -44,9 +41,15 @@ export const UserProfileDialog = ({ isOpen, setIsOpen, user }: UserProfileDialog
             <AvatarImage src={user.userImageSrc} className="object-cover" />
           </Avatar>
           
-          <h2 className="text-xl font-bold text-neutral-800 dark:text-white mb-2">{user.userName}</h2>
+          <h2 className="text-xl font-bold text-neutral-800 dark:text-white mb-1">{user.userName}</h2>
           
-          <div className={`px-4 py-1 rounded-full text-sm font-bold mb-6 ${leagueColor}`}>
+          {titleObj && (
+            <p className="text-xs font-black text-amber-500 mb-3 flex items-center gap-1">
+              <Award className="w-3.5 h-3.5 inline" /> {titleObj.title}
+            </p>
+          )}
+
+          <div className={`px-4 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider mb-6 ${leagueColor}`}>
             Liga {user.league}
           </div>
 

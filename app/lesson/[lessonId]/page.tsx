@@ -7,14 +7,15 @@ import { Quiz } from "../quiz";
 
 type Props = {
   params: {
-    lessonId: number;
+    lessonId: number | string;
   };
 };
 
 const LessonIdPage = async ({
   params,
 }: Props) => {
-  const lessonData = getLesson(params.lessonId);
+  const parsedId = Number(params.lessonId);
+  const lessonData = getLesson(isNaN(parsedId) ? undefined : parsedId);
   const userProgressData = getUserProgress();
   const userSubscriptionData = getUserSubscription();
   const [
@@ -46,6 +47,7 @@ const LessonIdPage = async ({
       userSubscription={userSubscription}
       referenceText={lesson.referenceText}
       isAdmin={isAdmin()}
+      userProgress={userProgress}
     />
   );
 };

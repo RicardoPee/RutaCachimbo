@@ -39,21 +39,21 @@ export const PvpLobbyClient = () => {
 
   return (
     <div className="flex flex-col items-center w-full mt-10">
-      <div className="bg-red-500/10 p-4 rounded-full mb-6 shadow-[0_0_50px_rgba(239,68,68,0.3)]">
+      <div className="bg-red-500/10 p-4 rounded-full mb-6 shadow-[0_0_50px_rgba(239,68,68,0.3)] animate-pulse">
         <Swords className="w-16 h-16 text-red-500" />
       </div>
-      <h1 className="text-3xl md:text-5xl font-black text-neutral-200 mb-2 font-cinzel text-center">
+      <h1 className="text-3xl md:text-5xl font-black text-neutral-800 dark:text-neutral-100 mb-2 font-cinzel text-center">
         ARENA PvP
       </h1>
-      <p className="text-neutral-500 text-center mb-12 max-w-md text-lg">
+      <p className="text-muted-foreground text-center mb-12 max-w-md text-base md:text-lg font-medium">
         Desafía a tus amigos en tiempo real. Demuestra quién tiene mejor racha y roba sus puntos.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
         {/* Create Room */}
-        <div className="bg-card border-2 border-border rounded-2xl p-6 flex flex-col items-center hover:border-red-500/50 transition-all shadow-xl group">
-          <h2 className="text-xl font-bold text-white mb-4">Crear Batalla</h2>
-          <p className="text-sm text-slate-400 text-center mb-6">
+        <div className="glass-card border-2 border-border rounded-3xl p-6 flex flex-col items-center hover:border-red-500/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-white dark:bg-background/40 group">
+          <h2 className="text-xl font-bold text-neutral-800 dark:text-white mb-4">Crear Batalla</h2>
+          <p className="text-sm text-muted-foreground text-center mb-6">
             Genera un código de invitación único y conviértete en el Anfitrión.
           </p>
           <button
@@ -67,21 +67,21 @@ export const PvpLobbyClient = () => {
         </div>
 
         {/* Join Room */}
-        <div className="bg-card border-2 border-border rounded-2xl p-6 flex flex-col items-center hover:border-blue-500/50 transition-all shadow-xl group">
-          <h2 className="text-xl font-bold text-white mb-4">Unirse a Batalla</h2>
-          <p className="text-sm text-slate-400 text-center mb-6">
+        <div className="glass-card border-2 border-border rounded-3xl p-6 flex flex-col items-center hover:border-blue-500/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-white dark:bg-background/40 group">
+          <h2 className="text-xl font-bold text-neutral-800 dark:text-white mb-4">Unirse a Batalla</h2>
+          <p className="text-sm text-muted-foreground text-center mb-6">
             ¿Tienes un código? Introdúcelo aquí para entrar a la arena de tu rival.
           </p>
           <form onSubmit={handleJoin} className="w-full flex flex-col gap-3">
             <div className="relative">
-              <KeyRound className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
+              <KeyRound className="w-5 h-5 text-muted-foreground absolute left-4 top-4" />
               <input 
                 type="text" 
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="CÓDIGO EJ. X7Z2"
                 maxLength={6}
-                className="w-full bg-slate-950 border-2 border-slate-700 rounded-xl py-3 pl-10 pr-4 text-center font-bold text-white focus:border-blue-500 focus:outline-none transition-colors uppercase tracking-widest text-lg"
+                className="w-full bg-slate-50 dark:bg-slate-950 border-2 border-border dark:border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-center font-bold text-neutral-800 dark:text-white focus:border-blue-500 focus:outline-none transition-colors uppercase tracking-widest text-lg"
               />
             </div>
             <button

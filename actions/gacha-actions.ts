@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getRandomBorderByRarity, getBorderById } from "@/lib/shop-catalog";
 
 const CHEST_PRICES = {
   COMUN: 50,
@@ -52,18 +53,10 @@ export const openChest = async (chestId: number) => {
       return { error: "Cofre inválido o ya abierto" };
     }
 
-    // RNG Logic based on chest type
-    let rewardValue = "";
-    let rewardType = "BORDER"; // Currently drops borders
-    const rand = Math.random();
-
-    if (chest.type === "COMUN") {
-      rewardValue = rand > 0.5 ? "border-slate-400" : "border-stone-500";
-    } else if (chest.type === "RARO") {
-      rewardValue = rand > 0.5 ? "border-blue-500" : "border-purple-500";
-    } else if (chest.type === "EPICO") {
-      rewardValue = rand > 0.7 ? "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.8)]" : "border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.8)]";
-    }
+    // Get catalog border reward by rarity
+    const borderReward = getRandomBorderByRarity(chest.type);
+    const rewardValue = borderReward.id; // Store clean ID
+    const rewardType = "BORDER";
 
     // Unlock reward
     await prisma.$transaction(async (tx) => {
@@ -73,16 +66,37 @@ export const openChest = async (chestId: number) => {
       });
       
       const user = await tx.userProgress.findUnique({ where: { userId } });
-      if (user && !user.ownedBorders.includes(rewardValue)) {
-         await tx.userProgress.update({
-           where: { userId },
-           data: { ownedBorders: { push: rewardValue } }
-         });
+      if (user) {
+        const owned = user.ownedBorders || [];
+        if (!owned.includes(rewardValue)) {
+          await tx.userProgress.update({
+            where: { userId },
+            data: { 
+              ownedBorders: { push: rewardValue },
+              activeBorder: rewardValue // Auto-equip reward on unlock
+            }
+          });
+        } else {
+          // Auto equip if already owned
+          await tx.userProgress.update({
+            where: { userId },
+            data: { activeBorder: rewardValue }
+          });
+        }
       }
     });
 
     revalidatePath("/shop");
-    return { success: true, rewardValue, rewardType };
+    revalidatePath("/leaderboard");
+
+    return { 
+      success: true, 
+      rewardValue, 
+      rewardName: borderReward.name,
+      rewardRarity: borderReward.rarity,
+      rewardStyle: borderReward.borderStyle,
+      rewardType 
+    };
   } catch (error) {
     return { error: "Error al abrir el cofre" };
   }

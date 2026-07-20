@@ -5,8 +5,9 @@ import Image from "next/image";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Crown, Target } from "lucide-react";
+import { Crown, Target, Award } from "lucide-react";
 import { UserProfileDialog } from "./user-profile-dialog";
+import { getBorderStyles, getTitleById } from "@/lib/shop-catalog";
 
 type LeaderboardClientProps = {
   allTimeData: any[];
@@ -16,13 +17,6 @@ type LeaderboardClientProps = {
 
 export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: LeaderboardClientProps) => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
-
-  const getBorderStyles = (borderName?: string) => {
-    if (borderName === "fire") return "border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.8)] dark:bg-rose-950 bg-rose-50";
-    if (borderName === "ice") return "border-cyan-500 shadow-[0_0_15px_rgba(6,182,214,0.8)] dark:bg-cyan-950 bg-cyan-50";
-    if (borderName === "gold") return "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.8)] dark:bg-yellow-950 bg-yellow-50";
-    return "border-slate-300 dark:border-slate-600 bg-muted";
-  };
 
   const renderPodium = (data: any[]) => {
     const top3 = data.slice(0, 3);
@@ -40,7 +34,12 @@ export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: Le
                 <AvatarImage src={top3[1].userImageSrc} className="object-cover" />
               </Avatar>
             </div>
-            <p className="font-bold text-neutral-700 dark:text-white mt-2 truncate w-20 text-center">{top3[1].userName}</p>
+            <p className="font-bold text-neutral-700 dark:text-white mt-2 truncate w-20 text-center text-sm">{top3[1].userName}</p>
+            {top3[1].activeTitle && getTitleById(top3[1].activeTitle) && (
+              <span className="text-[10px] font-extrabold text-amber-500 truncate max-w-[90px]">
+                {getTitleById(top3[1].activeTitle)?.title}
+              </span>
+            )}
             <div className="bg-slate-300 text-slate-800 font-bold px-3 py-1 rounded-t-lg mt-2 h-16 flex items-center justify-center w-16">
               2
             </div>
@@ -56,7 +55,12 @@ export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: Le
                 <AvatarImage src={top3[0].userImageSrc} className="object-cover" />
               </Avatar>
             </div>
-            <p className="font-bold text-neutral-800 dark:text-white mt-2 truncate w-24 text-center">{top3[0].userName}</p>
+            <p className="font-bold text-neutral-800 dark:text-white mt-2 truncate w-24 text-center text-sm">{top3[0].userName}</p>
+            {top3[0].activeTitle && getTitleById(top3[0].activeTitle) && (
+              <span className="text-[10px] font-extrabold text-amber-500 truncate max-w-[100px]">
+                {getTitleById(top3[0].activeTitle)?.title}
+              </span>
+            )}
             <div className="bg-yellow-400 text-yellow-900 font-black px-4 py-1 rounded-t-lg mt-2 h-24 flex items-center justify-center w-20 text-xl">
               1
             </div>
@@ -72,7 +76,12 @@ export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: Le
                 <AvatarImage src={top3[2].userImageSrc} className="object-cover" />
               </Avatar>
             </div>
-            <p className="font-bold text-neutral-700 dark:text-white mt-2 truncate w-20 text-center">{top3[2].userName}</p>
+            <p className="font-bold text-neutral-700 dark:text-white mt-2 truncate w-20 text-center text-sm">{top3[2].userName}</p>
+            {top3[2].activeTitle && getTitleById(top3[2].activeTitle) && (
+              <span className="text-[10px] font-extrabold text-amber-500 truncate max-w-[90px]">
+                {getTitleById(top3[2].activeTitle)?.title}
+              </span>
+            )}
             <div className="bg-amber-700 text-amber-100 font-bold px-3 py-1 rounded-t-lg mt-2 h-12 flex items-center justify-center w-16">
               3
             </div>
@@ -110,6 +119,7 @@ export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: Le
           const actualRank = index + 4; // Top 3 are sliced out
           const isMe = userProgress.userId === currentUserId;
           const isRival = rival?.userId === userProgress.userId;
+          const titleObj = getTitleById(userProgress.activeTitle);
 
           return (
             <div 
@@ -123,10 +133,17 @@ export const LeaderboardClient = ({ allTimeData, weeklyData, currentUserId }: Le
               <Avatar className={`border-2 h-12 w-12 ml-3 mr-6 ${getBorderStyles(userProgress.activeBorder)}`}>
                 <AvatarImage className="object-cover" src={userProgress.userImageSrc} />
               </Avatar>
-              <p className="font-bold text-neutral-800 dark:text-white flex-1 truncate">
-                {userProgress.userName} {isMe && "(Tú)"}
-              </p>
-              <p className="text-muted-foreground font-bold">
+              <div className="flex-1 min-w-0 mr-4">
+                <p className="font-bold text-neutral-800 dark:text-white truncate text-sm">
+                  {userProgress.userName} {isMe && "(Tú)"}
+                </p>
+                {titleObj && (
+                  <p className="text-[10px] font-extrabold text-amber-500 truncate">
+                    {titleObj.title}
+                  </p>
+                )}
+              </div>
+              <p className="text-muted-foreground font-bold shrink-0">
                 {isWeekly ? userProgress.weeklyPoints : userProgress.points} XP
               </p>
             </div>

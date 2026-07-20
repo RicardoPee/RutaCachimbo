@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { isAdminId } from "@/lib/admin";
+import { TournamentRepository } from "@/db/repositories/tournament-repository";
 
 export const createWarEvent = async (data: any) => {
     const { userId } = auth();
@@ -103,20 +104,11 @@ export const getTournamentState = async (tournamentId?: number) => {
   const { userId } = auth();
   if (!userId) return null;
 
-  const tournament = await prisma.liveTournament.findFirst({
-    where: {
-      status: { in: ["PENDING", "ACTIVE", "FINISHED"] },
-      ...(tournamentId ? { id: tournamentId } : {})
-    },
-    orderBy: { startTime: "asc" },
-    include: { questions: { orderBy: { order: "asc" } } }
-  });
+  const tournament = await TournamentRepository.findActiveOrPending(tournamentId);
 
   if (!tournament) return null;
 
-  const participant = await prisma.tournamentParticipant.findFirst({
-    where: { userId, tournamentId: tournament.id }
-  });
+  const participant = await TournamentRepository.findParticipant(userId, tournament.id);
 
   const now = new Date();
   const startTime = new Date(tournament.startTime);
@@ -288,16 +280,12 @@ export const submitTournamentAnswer = async (tournamentId: number, questionId: n
 
     const newAnswers = [...currentAnswers, { questionId, selectedIndex, pointsEarned, cheatCount }];
 
-    await prisma.$transaction([
-      prisma.tournamentParticipant.update({
-        where: { id: participant.id },
-        data: { score: { increment: pointsEarned }, answers: newAnswers }
-      }),
-      prisma.faction.update({
-        where: { id: participant.factionId },
-        data: { totalXp: { increment: pointsEarned } }
-      })
-    ]);
+    await TournamentRepository.updateParticipantScore(
+      participant.id,
+      participant.factionId,
+      pointsEarned,
+      newAnswers
+    );
 
     return { success: true };
   } catch (e) {
@@ -323,17 +311,24 @@ export const publishTournamentResults = async (tournamentId: number) => {
 
 import { clerkClient } from "@clerk/nextjs/server";
 
-export const getTournamentLeaderboard = async (tournamentId: number) => {
+export const getTournamentLeaderboard = async (tournamentId: number, page: number = 1, limit: number = 30) => {
+  const skip = (page - 1) * limit;
+
   const participants = await prisma.tournamentParticipant.findMany({
     where: { tournamentId },
     orderBy: { score: "desc" },
-    take: 30,
+    take: limit,
+    skip,
     include: {
       faction: true // Traemos los datos de la Universidad a la que representa
     }
   });
 
-  if (participants.length === 0) return [];
+  const totalCount = await prisma.tournamentParticipant.count({
+    where: { tournamentId }
+  });
+
+  if (participants.length === 0) return { data: [], totalPages: 0, currentPage: page };
 
   // Obtener los datos reales de los usuarios desde Clerk
   const userIds = participants.map(p => p.userId);
@@ -350,7 +345,11 @@ export const getTournamentLeaderboard = async (tournamentId: number) => {
     };
   });
   
-  return enrichedParticipants;
+  return { 
+    data: enrichedParticipants, 
+    totalPages: Math.ceil(totalCount / limit), 
+    currentPage: page 
+  };
 };
 
 export const syncTournaments = async () => {

@@ -13,7 +13,8 @@ import {
   getLessonPercentage, 
   getUnits, 
   getUserProgress,
-  getUserSubscription
+  getUserSubscription,
+  getDynamicQuests
 } from "@/db/queries";
 
 import { Unit } from "./unit";
@@ -26,6 +27,7 @@ const LearnPage = async () => {
   const lessonPercentageData = getLessonPercentage();
   const unitsData = getUnits();
   const userSubscriptionData = getUserSubscription();
+  const dynamicQuestsData = getDynamicQuests();
 
   const [
     userProgress,
@@ -33,12 +35,14 @@ const LearnPage = async () => {
     courseProgress,
     lessonPercentage,
     userSubscription,
+    dynamicQuests,
   ] = await Promise.all([
     userProgressData,
     unitsData,
     courseProgressData,
     lessonPercentageData,
     userSubscriptionData,
+    dynamicQuestsData,
   ]);
 
   if (!userProgress || !userProgress.activeCourse) {
@@ -64,7 +68,7 @@ const LearnPage = async () => {
         {!isPro && (
           <Promo />
         )}
-        <Quests points={userProgress.weeklyPoints} />
+        <Quests quests={dynamicQuests} />
         <DidYouKnow />
       </StickyWrapper>
       <FeedWrapper>

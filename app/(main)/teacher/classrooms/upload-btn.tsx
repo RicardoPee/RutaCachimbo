@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { processPdfExam } from "@/actions/upload-pdf";
 import { Loader2 } from "lucide-react";
 
-export const UploadPdfButton = ({ classroomId }: { classroomId: number }) => {
+export const UploadPdfButton = ({ classroomId, courseId }: { classroomId?: number; courseId?: number }) => {
   const [pending, startTransition] = useTransition();
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -15,7 +15,8 @@ export const UploadPdfButton = ({ classroomId }: { classroomId: number }) => {
 
     const formData = new FormData();
     formData.append("pdf", file);
-    formData.append("classroomId", classroomId.toString());
+    if (classroomId) formData.append("classroomId", classroomId.toString());
+    if (courseId) formData.append("courseId", courseId.toString());
 
     startTransition(() => {
       processPdfExam(formData)
