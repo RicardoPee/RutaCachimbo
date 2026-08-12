@@ -245,3 +245,46 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
   await triggerMatchUpdate(matchId);
   return { success: true, isCorrect, nextTurn };
 }
+
+export async function challengeUserPvp(targetUserId: string) {
+  const { userId } = auth();
+  if (!userId) return { error: "No autorizado" };
+  if (userId === targetUserId) return { error: "No puedes desafiarte a ti mismo" };
+
+  const currentUser = await prisma.userProgress.findUnique({ where: { userId } });
+  if (!currentUser) return { error: "Usuario no encontrado" };
+
+  const targetUser = await prisma.userProgress.findUnique({ where: { userId: targetUserId } });
+  if (!targetUser) return { error: "Oponente no encontrado" };
+
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const examRes = await getMockExamQuestions("ia-dynamic");
+  if (examRes.error || !examRes.questions) return { error: examRes.error || "No hay preguntas disponibles" };
+
+  try {
+    const match = await prisma.pvpMatch.create({
+      data: {
+        code,
+        status: "NEGOTIATING",
+        player1Id: userId,
+        player2Id: targetUserId,
+        questions: examRes.questions as any,
+      }
+    });
+
+    // Enviar notificación al oponente
+    await triggerUserNotification(targetUserId, {
+      type: "pvp_invite",
+      title: "¡Desafío a Duelo! ⚔️",
+      message: `${currentUser.userName} te ha retado a un duelo PvP. ¡Haz clic para responder!`,
+      href: `/pvp/play/${match.id}`,
+      icon: "⚔️",
+    });
+
+    return { success: true, matchId: match.id };
+  } catch (e) {
+    console.error("[CHALLENGE_USER_PVP_ERROR]", e);
+    return { error: "Error al crear el desafío de duelo" };
+  }
+}
+

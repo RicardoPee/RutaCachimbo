@@ -10,6 +10,9 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Star, Award } from "lucide-react";
 import { getBorderStyles, getTitleById } from "@/lib/shop-catalog";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
 type UserProfileDialogProps = {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
@@ -53,7 +56,7 @@ export const UserProfileDialog = ({ isOpen, setIsOpen, user }: UserProfileDialog
             Liga {user.league}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 w-full">
+          <div className="grid grid-cols-2 gap-4 w-full mb-6">
             <div className="flex flex-col items-center p-4 bg-muted rounded-xl border-2 border-slate-100 dark:border-border">
               <Star className="h-8 w-8 text-yellow-400 mb-2" />
               <p className="text-sm text-neutral-500 font-bold">Puntos Históricos</p>
@@ -65,6 +68,12 @@ export const UserProfileDialog = ({ isOpen, setIsOpen, user }: UserProfileDialog
               <p className="text-lg font-black text-neutral-800 dark:text-white">{user.weeklyPoints}</p>
             </div>
           </div>
+
+          <Link href={`/perfil/${user.userId}`} className="w-full" onClick={() => setIsOpen(false)}>
+            <Button className="w-full font-bold bg-primary hover:bg-primary/90 text-white rounded-xl">
+              Ver Perfil Completo
+            </Button>
+          </Link>
         </div>
       </DialogContent>
     </Dialog>

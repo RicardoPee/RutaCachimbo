@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUserProgress } from "@/db/queries";
 import { PvpLobbyClient } from "./pvp-lobby-client";
+import { PvpHistory } from "@/components/pvp-history";
 import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
@@ -27,6 +28,7 @@ export default async function PvpPage() {
       <FeedWrapper>
         <div className="w-full flex flex-col items-center gap-8">
           <PvpLobbyClient />
+          <PvpHistory />
         </div>
       </FeedWrapper>
     </div>
