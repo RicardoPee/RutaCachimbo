@@ -17,5 +17,5 @@ export const UserProfileMenu = async () => {
   const isUserAdmin = isAdmin();
   const isTeacher = !!progress?.isTeacher;
 
-  return <UserProfileMenuClient isAdmin={isUserAdmin} isTeacher={isTeacher} />;
+  return <UserProfileMenuClient userId={userId} isAdmin={isUserAdmin} isTeacher={isTeacher} />;
 };

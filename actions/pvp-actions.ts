@@ -6,6 +6,8 @@ import { logMistake } from "@/actions/mistakes";
 import { getMockExamQuestions } from "./mock-exam-actions";
 import { pusherServer } from "@/lib/pusher";
 import { PVP_POINTS_PER_CORRECT, PVP_NEGOTIATION_TIMEOUT_MS } from "@/constants";
+import { incrementFactionXp } from "@/lib/faction-xp";
+import { triggerUserNotification } from "@/lib/pusher";
 
 const triggerMatchUpdate = async (matchId: number, retries = 3) => {
   if (pusherServer) {
@@ -64,6 +66,14 @@ export async function joinPvPLobby(code: string) {
         player2Id: userId,
         status: "NEGOTIATING"
       }
+    });
+    // Notificar al creador del lobby que alguien se unió
+    triggerUserNotification(match.player1Id, {
+      type: "pvp_invite",
+      title: "¡Tienes rival! ⚔️",
+      message: "Un contrincante aceptó tu desafío. ¡Ve a negociar la apuesta!",
+      href: `/pvp/${match.id}`,
+      icon: "⚔️",
     });
     await triggerMatchUpdate(match.id);
     return { success: true, matchId: match.id };
@@ -203,7 +213,6 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
     const loserId = winnerId === match.player1Id ? match.player2Id : winnerId === match.player2Id ? match.player1Id : null;
 
     if (wager > 0 && winnerId && loserId) {
-      // Prevenir puntos negativos calculando el saldo real del perdedor
       const loserProgress = await prisma.userProgress.findUnique({ where: { userId: loserId } });
       const loserPoints = loserProgress?.points || 0;
       const safeDeduction = Math.min(loserPoints, wager);
@@ -222,6 +231,17 @@ export async function submitPvPAnswer(matchId: number, answerIndex: number) {
   }
 
   await prisma.$transaction(operations);
+
+  // Actualizar XP de facción del ganador (fuera de la transacción array por limitación de Prisma)
+  if (finished) {
+    const wagerPoints = match.wagerPoints || 0;
+    const winnerId = newScore1 > newScore2 ? match.player1Id : newScore2 > newScore1 ? match.player2Id : null;
+    if (winnerId && wagerPoints > 0) {
+      await prisma.$transaction(async (tx) => {
+        await incrementFactionXp(tx, winnerId, wagerPoints);
+      });
+    }
+  }
   await triggerMatchUpdate(matchId);
   return { success: true, isCorrect, nextTurn };
 }

@@ -3,6 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { incrementFactionXp } from "@/lib/faction-xp";
 
 const DAILY_XP_BONUS = 50;
 
@@ -114,6 +115,7 @@ export async function submitDailyChallenge(challengeId: number, selectedOptionId
           weeklyPoints: { increment: xpEarned },
         },
       });
+      await incrementFactionXp(tx, userId, xpEarned);
     }
   });
 

@@ -8,6 +8,7 @@ import { getUserProgress, getUserSubscription } from "@/db/queries";
 import { calculateNewStreak } from "@/lib/streak";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 import { POINTS_PER_CHALLENGE, MAX_HEARTS } from "@/constants";
+import { incrementFactionXp } from "@/lib/faction-xp";
 
 export const upsertChallengeProgress = async (challengeId: number) => {
   const { userId } = auth();
@@ -72,29 +73,31 @@ export const upsertChallengeProgress = async (challengeId: number) => {
   };
 
   if (isPractice) {
-    await prisma.$transaction([
-      prisma.challengeProgress.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.challengeProgress.update({
         where: { id: existingChallengeProgress.id },
         data: { completed: true },
-      }),
-      prisma.userProgress.update({
+      });
+      await tx.userProgress.update({
         where: { userId },
         data: {
           ...progressUpdate,
           hearts: Math.min(currentUserProgress.hearts + 1, MAX_HEARTS),
         },
-      }),
-    ]);
+      });
+      await incrementFactionXp(tx, userId, pointsEarned);
+    });
   } else {
-    await prisma.$transaction([
-      prisma.challengeProgress.create({
+    await prisma.$transaction(async (tx) => {
+      await tx.challengeProgress.create({
         data: { challengeId, userId, completed: true },
-      }),
-      prisma.userProgress.update({
+      });
+      await tx.userProgress.update({
         where: { userId },
         data: progressUpdate,
-      }),
-    ]);
+      });
+      await incrementFactionXp(tx, userId, pointsEarned);
+    });
   }
 
   // Verificar logros desbloqueados

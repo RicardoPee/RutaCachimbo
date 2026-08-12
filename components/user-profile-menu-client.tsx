@@ -14,13 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationBell } from "./notification-bell";
 
 type Props = {
+  userId: string;
   isAdmin: boolean;
   isTeacher: boolean;
 };
 
-export const UserProfileMenuClient = ({ isAdmin, isTeacher }: Props) => {
+export const UserProfileMenuClient = ({ userId, isAdmin, isTeacher }: Props) => {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -69,6 +71,8 @@ export const UserProfileMenuClient = ({ isAdmin, isTeacher }: Props) => {
             }}
           />
         </ClerkLoaded>
+
+        <NotificationBell userId={userId} />
 
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">

@@ -17,6 +17,7 @@ import {
   MOCK_EXAM_POINTS_CORRECT,
   MOCK_EXAM_PENALTY_INCORRECT,
 } from "@/constants";
+import { incrementFactionXp } from "@/lib/faction-xp";
 
 const MockExamSchema = z.object({
   questions: z.array(z.object({
@@ -188,15 +189,18 @@ export async function submitMockExam(payload: { answers: Record<number, number |
         currentUserProgress.lastActive,
         currentUserProgress.streakFreeze
       );
-      await prisma.userProgress.update({
-        where: { userId },
-        data: {
-          points: currentUserProgress.points + POINTS_PER_MOCK_EXAM,
-          weeklyPoints: currentUserProgress.weeklyPoints + POINTS_PER_MOCK_EXAM,
-          streak: newStreak,
-          lastActive: newLastActive,
-          ...(usedFreeze ? { streakFreeze: false } : {}),
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.userProgress.update({
+          where: { userId },
+          data: {
+            points: currentUserProgress.points + POINTS_PER_MOCK_EXAM,
+            weeklyPoints: currentUserProgress.weeklyPoints + POINTS_PER_MOCK_EXAM,
+            streak: newStreak,
+            lastActive: newLastActive,
+            ...(usedFreeze ? { streakFreeze: false } : {}),
+          },
+        });
+        await incrementFactionXp(tx, userId, POINTS_PER_MOCK_EXAM);
       });
 
       const totalQuestions = correct + incorrect + blank;

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { triggerUserNotification } from "@/lib/pusher";
 
 export type Achievement = {
   id: string;
@@ -101,7 +102,6 @@ export async function checkAndUnlockAchievements(
     if (newlyUnlocked.length > 0) {
       const updatedUnlocked = Array.from(new Set([...unlocked, ...newlyUnlocked]));
       
-      // Calcular XP adicional ganado por los nuevos logros
       const addedXp = newlyUnlocked.reduce((sum, id) => {
         const achievement = ALL_ACHIEVEMENTS.find((a) => a.id === id);
         return sum + (achievement?.xpBonus || 0);
@@ -114,6 +114,20 @@ export async function checkAndUnlockAchievements(
           points: userProgress.points + addedXp,
         },
       });
+
+      // Notificar por cada logro desbloqueado
+      for (const id of newlyUnlocked) {
+        const achievement = ALL_ACHIEVEMENTS.find((a) => a.id === id);
+        if (achievement) {
+          triggerUserNotification(userId, {
+            type: "achievement",
+            title: `¡Logro desbloqueado! ${achievement.icon}`,
+            message: `${achievement.name}: ${achievement.description} (+${achievement.xpBonus} XP)`,
+            href: "/logros",
+            icon: achievement.icon,
+          });
+        }
+      }
     }
 
     return newlyUnlocked;
