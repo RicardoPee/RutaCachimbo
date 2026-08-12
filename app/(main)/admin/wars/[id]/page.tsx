@@ -171,7 +171,7 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
                     <div className="flex items-center gap-4">
                       <div className="relative shrink-0 w-12 h-12">
                         {p.userImage ? (
-                          <Image src={p.userImage} alt={p.userName} fill className="rounded-full border-2 border-indigo-500 object-cover" />
+                          <Image src={p.userImage} alt={p.userName} fill sizes="48px" className="rounded-full border-2 border-indigo-500 object-cover" />
                         ) : (
                           <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center font-black text-indigo-700">
                             {p.userName.slice(0, 2).toUpperCase()}

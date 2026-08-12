@@ -85,7 +85,7 @@ export const Card = ({
         {/* Imagen si existe */}
         {imageSrc && (
           <div className="relative aspect-square max-h-[50px] w-[50px] shrink-0">
-            <Image src={imageSrc} fill alt={text} className="rounded-lg" />
+            <Image src={imageSrc} fill sizes="50px" alt={text} className="rounded-lg" />
           </div>
         )}
         {/* Texto de la opción */}

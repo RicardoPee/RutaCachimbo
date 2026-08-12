@@ -43,7 +43,7 @@ export const RadarChartClient = ({ hasHistory }: { hasHistory: boolean }) => {
       <div className="bg-card border-2 border-border rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-8">
         <div className="w-full md:w-1/2 h-[350px]">
           {isMounted ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="70%" data={hasHistory ? MOCK_DATA : MOCK_DATA.map(d => ({...d, A: 20}))}>
                 <PolarGrid className="stroke-neutral-300 dark:stroke-slate-700" />
                 <PolarAngleAxis dataKey="subject" className="text-xs font-bold fill-neutral-600 dark:fill-slate-400" />
