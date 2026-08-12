@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { isAdminId } from "@/lib/admin";
 import { MAX_HEARTS } from "@/constants";
 
+function getPeruDateString(date: Date): string {
+  return date.toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+}
+
 export const getUserProgress = cache(async () => {
   const { userId } = auth();
 
@@ -21,22 +25,53 @@ export const getUserProgress = cache(async () => {
 
   if (!data) return null;
 
-  // Auto-refill pasivo diario de corazones (después de 24 horas)
-  if (data.hearts < MAX_HEARTS) {
-    const lastActiveTime = data.lastActive ? new Date(data.lastActive).getTime() : 0;
-    const now = Date.now();
-    const isNextDay = (now - lastActiveTime) >= 24 * 60 * 60 * 1000;
+  const now = new Date();
+  const lastActive = data.lastActive ? new Date(data.lastActive) : null;
+  const updates: Record<string, any> = {};
 
+  // Auto-refill pasivo diario de corazones (después de 24 horas)
+  if (data.hearts < MAX_HEARTS && lastActive) {
+    const isNextDay = (now.getTime() - lastActive.getTime()) >= 24 * 60 * 60 * 1000;
     if (isNextDay) {
-      try {
-        await prisma.userProgress.update({
-          where: { userId },
-          data: { hearts: MAX_HEARTS },
-        });
-        data.hearts = MAX_HEARTS;
-      } catch (err) {
-        console.error("Error auto-refilling hearts:", err);
+      updates.hearts = MAX_HEARTS;
+      data.hearts = MAX_HEARTS;
+    }
+  }
+
+  // Auto-reset de streak si pasó más de 1 día sin estudiar
+  // (mismo criterio de horario que calculateNewStreak: zona América/Lima)
+  if (data.streak > 0 && lastActive) {
+    const todayStr = getPeruDateString(now);
+    const lastStr = getPeruDateString(lastActive);
+    const todayDate = new Date(todayStr + "T00:00:00");
+    const lastDate = new Date(lastStr + "T00:00:00");
+    const diffDays = Math.round(
+      (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Si faltó más de 1 día Y no tiene streak freeze → racha rota
+    if (diffDays > 1) {
+      if (data.streakFreeze) {
+        // Consume el freeze pero mantiene la racha
+        updates.streakFreeze = false;
+      } else {
+        updates.streak = 0;
+        data.streak = 0;
       }
+    }
+  }
+
+  // Aplicar todos los cambios en una sola query si hay algo que actualizar
+  if (Object.keys(updates).length > 0) {
+    try {
+      await prisma.userProgress.update({
+        where: { userId },
+        data: updates,
+      });
+      // Reflejar cambios en el objeto local
+      Object.assign(data, updates);
+    } catch (err) {
+      console.error("[getUserProgress passive update error]", err);
     }
   }
 
