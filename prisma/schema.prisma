@@ -102,8 +102,21 @@ model Lesson {
   unit          Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
   pdfDocument   PdfDocument? @relation(fields: [pdfDocumentId], references: [id], onDelete: SetNull)
   challenges    Challenge[]
+  vocabularyWords VocabularyWord[]
 
   @@map("lessons")
+}
+
+model VocabularyWord {
+  id          Int      @id @default(autoincrement())
+  lessonId    Int      @map("lesson_id")
+  word        String
+  definition  String
+  context     String   // la oración del texto donde se usa
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("vocabulary_words")
 }
 
 model Challenge {

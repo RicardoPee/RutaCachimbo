@@ -452,3 +452,28 @@ export const getDynamicQuests = cache(async () => {
 
   return dynamicQuestsList;
 });
+
+export const getCompletedLessons = cache(async () => {
+  const { userId } = auth();
+  if (!userId) return [];
+
+  const lessons = await prisma.lesson.findMany({
+    include: {
+      challenges: {
+        include: {
+          challengeProgress: {
+            where: { userId, completed: true },
+          },
+        },
+      },
+    },
+  });
+
+  return lessons.filter((lesson) => {
+    if (lesson.challenges.length === 0) return false;
+    return lesson.challenges.every(
+      (c) => c.challengeProgress && c.challengeProgress.length > 0
+    );
+  });
+});
+
