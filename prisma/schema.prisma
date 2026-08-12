@@ -351,3 +351,17 @@ model TournamentParticipant {
   @@index([tournamentId, score])
   @@map("tournament_participants")
 }
+
+model DailyChallengeClaim {
+  id          Int      @id @default(autoincrement())
+  userId      String   @map("user_id")
+  date        String   @map("date") // "YYYY-MM-DD" en zona America/Lima
+  challengeId Int      @map("challenge_id")
+  correct     Boolean
+  xpEarned    Int      @default(0) @map("xp_earned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("daily_challenge_claims")
+}

@@ -7,6 +7,7 @@ import { FeedWrapper } from "@/components/feed-wrapper";
 import { UserProgress } from "@/components/user-progress";
 import { StickyWrapper } from "@/components/sticky-wrapper";
 import { DidYouKnow } from "@/components/did-you-know";
+import { DailyChallenge } from "@/components/daily-challenge";
 import type { Lesson, Unit as UnitModel } from "@prisma/client";
 import { 
   getCourseProgress, 
@@ -68,6 +69,7 @@ const LearnPage = async () => {
         {!isPro && (
           <Promo />
         )}
+        <DailyChallenge />
         <Quests quests={dynamicQuests} />
         <DidYouKnow />
       </StickyWrapper>
