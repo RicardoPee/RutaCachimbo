@@ -74,7 +74,7 @@ export const UserProfileMenuClient = ({ userId, isAdmin, isTeacher }: Props) => 
 
         <NotificationBell userId={userId} />
 
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger className="focus:outline-none">
             <div className={`flex items-center px-2 py-1 rounded-md text-xs font-bold cursor-pointer transition-opacity hover:opacity-80 ${badgeColor}`}>
               {roleIcon}
