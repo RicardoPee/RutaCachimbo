@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { Bot, Activity, BrainCircuit, Loader2 } from "lucide-react";
-import { generatePerformanceAnalysis } from "@/actions/analytics-actions";
+import { generatePerformanceAnalysis } from "@/actions/user/analytics-actions";
 import { toast } from "sonner";
 
 const MOCK_DATA = [

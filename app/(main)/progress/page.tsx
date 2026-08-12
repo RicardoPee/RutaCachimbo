@@ -7,7 +7,7 @@ import {
   getTopTenUsers,
   getDynamicQuests
 } from "@/db/queries";
-import { getUserAchievements } from "@/actions/achievement-actions";
+import { getUserAchievements } from "@/actions/user/achievement-actions";
 import { ProgressClient } from "./progress-client";
 
 const ProgressPage = async () => {

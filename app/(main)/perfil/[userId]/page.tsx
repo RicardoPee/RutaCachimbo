@@ -6,10 +6,10 @@ import { ArrowLeft, Flame, Trophy, Award, Shield, Swords, Calendar, Lock } from 
 
 import { prisma } from "@/lib/prisma";
 import { getUserProgress } from "@/db/queries";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { StickyWrapper } from "@/components/sticky-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { ChallengeButton } from "@/components/challenge-button";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { ChallengeButton } from "@/components/pvp/challenge-button";
 import { getBorderStyles, getTitleById } from "@/lib/shop-catalog";
 import { ALL_ACHIEVEMENTS } from "@/lib/achievements";
 

@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { getUserProgress } from "@/db/queries";
 import { PvpLobbyClient } from "./pvp-lobby-client";
-import { PvpHistory } from "@/components/pvp-history";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { PvpHistory } from "@/components/pvp/pvp-history";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 
 export default async function PvpPage() {
   const userProgressData = getUserProgress();

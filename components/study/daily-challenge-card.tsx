@@ -5,7 +5,7 @@ import { Zap, CheckCircle2, XCircle, Trophy, Clock, BookOpen, ChevronDown, Chevr
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { submitDailyChallenge } from "@/actions/daily-challenge-actions";
+import { submitDailyChallenge } from "@/actions/game/daily-challenge-actions";
 
 type Option = {
   id: number;

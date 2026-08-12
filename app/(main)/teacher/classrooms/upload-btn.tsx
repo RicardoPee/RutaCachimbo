@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { processPdfExam } from "@/actions/upload-pdf";
+import { processPdfExam } from "@/actions/admin/upload-pdf";
 import { Loader2 } from "lucide-react";
 
 export const UploadPdfButton = ({ classroomId, courseId }: { classroomId?: number; courseId?: number }) => {

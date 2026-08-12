@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { addRepasoXp } from "@/actions/repaso-actions";
+import { addRepasoXp } from "@/actions/game/repaso-actions";
 
 type Option = {
   id: number;

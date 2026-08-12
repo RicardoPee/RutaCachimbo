@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
-import { Promo } from "@/components/promo";
-import { Quests } from "@/components/quests";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
+import { Promo } from "@/components/study/promo";
+import { Quests } from "@/components/study/quests";
 import { AudiotecaClient } from "./audioteca-client";
 
 const AudiotecaPage = async () => {

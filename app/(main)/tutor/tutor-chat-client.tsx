@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Send, Sparkles, Loader2, RefreshCw, GraduationCap, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { deductPointsForTutor } from "@/actions/user-progress";
+import { deductPointsForTutor } from "@/actions/user/user-progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 

@@ -4,9 +4,9 @@ import { ArrowLeft, Swords } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { getUserProgress } from "@/db/queries";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { StickyWrapper } from "@/components/sticky-wrapper";
-import { UserProgress } from "@/components/user-progress";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
 import { RepasoClient } from "./repaso-client";
 
 export default async function RepasoPage() {

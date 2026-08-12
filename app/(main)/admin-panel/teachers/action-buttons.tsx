@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { approveApplication, rejectApplication } from "@/actions/teacher-applications";
+import { approveApplication, rejectApplication } from "@/actions/admin/teacher-applications";
 import { Check, X, Loader2 } from "lucide-react";
 
 type Props = {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createWarEvent } from "@/actions/tournament-actions";
+import { createWarEvent } from "@/actions/game/tournament-actions";
 import { useRouter } from "next/navigation";
 
 export const CreateWarButton = () => {

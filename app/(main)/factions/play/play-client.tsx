@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getTournamentState, submitTournamentAnswer, getTournamentLeaderboard, joinTournament } from "@/actions/tournament-actions";
+import { getTournamentState, submitTournamentAnswer, getTournamentLeaderboard, joinTournament } from "@/actions/game/tournament-actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Shield, Trophy, Zap, AlertTriangle, EyeOff, CheckCircle2, XCircle, Clock } from "lucide-react";

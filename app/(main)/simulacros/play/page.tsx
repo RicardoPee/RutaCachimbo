@@ -1,4 +1,4 @@
-import { getMockExamQuestions } from "@/actions/mock-exam-actions";
+import { getMockExamQuestions } from "@/actions/game/mock-exam-actions";
 import { MockExamClient } from "./mock-exam-client";
 import { redirect } from "next/navigation";
 

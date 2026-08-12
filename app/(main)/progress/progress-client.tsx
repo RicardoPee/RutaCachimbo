@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RadarChart } from "./radar-chart";
-import { UserAchievementStatus } from "@/actions/achievement-actions";
+import { UserAchievementStatus } from "@/actions/user/achievement-actions";
 import { getBorderStyles } from "@/lib/shop-catalog";
 
 type DynamicQuest = {

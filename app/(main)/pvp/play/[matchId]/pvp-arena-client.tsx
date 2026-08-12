@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getMatchState, proposeWager, acceptWager, submitPvPAnswer } from "@/actions/pvp-actions";
+import { getMatchState, proposeWager, acceptWager, submitPvPAnswer } from "@/actions/game/pvp-actions";
 import { Loader2, Swords, MessageCircle, Clock, Trophy } from "lucide-react";
 import { Challenge } from "@/app/lesson/challenge";
 import { toast } from "sonner";

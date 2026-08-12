@@ -11,7 +11,7 @@ import {
   SignedIn, 
   SignedOut
 } from "@clerk/nextjs";
-import { Countdown } from "@/components/countdown";
+import { Countdown } from "@/components/study/countdown";
 
 export default function Home() {
   const containerVariants: Variants = {

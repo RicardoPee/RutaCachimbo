@@ -2,7 +2,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { PvpStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { logMistake } from "@/actions/mistakes";
+import { logMistake } from "@/actions/user/mistakes";
 import { getMockExamQuestions } from "./mock-exam-actions";
 import { pusherServer } from "@/lib/pusher";
 import { PVP_POINTS_PER_CORRECT, PVP_NEGOTIATION_TIMEOUT_MS } from "@/constants";

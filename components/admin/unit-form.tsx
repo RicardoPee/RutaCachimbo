@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { upsertUnit } from "@/actions/unit-actions";
+import { upsertUnit } from "@/actions/admin/unit-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, ArrowLeft, BookOpen, Notebook, Trash } from "lucide-react";
@@ -156,7 +156,7 @@ export const UnitForm = ({ initialData, courses }: UnitFormProps) => {
                     if (confirm("¿Estás seguro de que deseas eliminar esta unidad? Se borrarán todas las lecciones asociadas.")) {
                       try {
                         setIsSaving(true);
-                        const { deleteUnit } = await import("@/actions/unit-actions");
+                        const { deleteUnit } = await import("@/actions/admin/unit-actions");
                         await deleteUnit(initialData.id!);
                         toast.success("Unidad eliminada");
                         router.push("/admin/units");

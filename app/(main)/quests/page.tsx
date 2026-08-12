@@ -2,12 +2,12 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Target, Zap, Trophy, CheckCircle2, BookOpen, Flame, BrainCircuit } from "lucide-react";
 
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 import { getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
 import { Progress } from "@/components/ui/progress";
-import { Promo } from "@/components/promo";
+import { Promo } from "@/components/study/promo";
 
 const QuestsPage = async () => {
   const userProgressData = getUserProgress();

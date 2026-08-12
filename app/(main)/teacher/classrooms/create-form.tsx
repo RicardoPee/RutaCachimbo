@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClassroom } from "@/actions/classrooms";
+import { createClassroom } from "@/actions/classroom/classrooms";
 
 export const CreateClassroomForm = () => {
   const [name, setName] = useState("");

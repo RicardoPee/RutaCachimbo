@@ -4,10 +4,10 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { submitMockExam } from "@/actions/mock-exam-actions";
+import { submitMockExam } from "@/actions/game/mock-exam-actions";
 import { Timer, ArrowRight, ArrowLeft, Send, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { ReadingPassageReader } from "@/components/reading-passage-reader";
+import { ReadingPassageReader } from "@/components/study/reading-passage-reader";
 
 type Question = any;
 

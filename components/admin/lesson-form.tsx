@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { upsertLesson } from "@/actions/lesson-actions";
+import { upsertLesson } from "@/actions/admin/lesson-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, ArrowLeft, Trash } from "lucide-react";
@@ -149,7 +149,7 @@ export const LessonForm = ({ initialData, units }: LessonFormProps) => {
                   if (confirm("¿Estás seguro de que deseas eliminar esta lección? Se borrarán todas las preguntas asociadas.")) {
                     try {
                       setIsSaving(true);
-                      const { deleteLesson } = await import("@/actions/lesson-actions");
+                      const { deleteLesson } = await import("@/actions/admin/lesson-actions");
                       await deleteLesson(initialData.id!);
                       toast.success("Lección eliminada");
                       router.push("/admin/lessons");

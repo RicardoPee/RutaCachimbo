@@ -7,14 +7,14 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
 import { useAudio, useWindowSize, useMount } from "react-use";
 
-import { reduceHearts } from "@/actions/user-progress";
-import { logMistake } from "@/actions/mistakes";
+import { reduceHearts } from "@/actions/user/user-progress";
+import { logMistake } from "@/actions/user/mistakes";
 import { useHeartsModal } from "@/store/use-hearts-modal";
 import type { Challenge as ChallengeModel, ChallengeOption, UserSubscription } from "@prisma/client";
 import { usePracticeModal } from "@/store/use-practice-modal";
-import { upsertChallengeProgress } from "@/actions/challenge-progress";
-import { generateQuestionsForLesson } from "@/actions/generate-questions";
-import { consumePowerupCard } from "@/actions/powerup-actions";
+import { upsertChallengeProgress } from "@/actions/user/challenge-progress";
+import { generateQuestionsForLesson } from "@/actions/game/generate-questions";
+import { consumePowerupCard } from "@/actions/user/powerup-actions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Shield, Bot, BookOpen, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
@@ -24,9 +24,9 @@ import { Footer } from "./footer";
 import { Challenge } from "./challenge";
 import { ResultCard } from "./result-card";
 import { QuestionBubble } from "./question-bubble";
-import { MascotAvatar } from "@/components/mascot-avatar";
+import { MascotAvatar } from "@/components/user/mascot-avatar";
 import { TutorChat } from "@/components/features/tutor-chat";
-import { ReadingPassageReader } from "@/components/reading-passage-reader";
+import { ReadingPassageReader } from "@/components/study/reading-passage-reader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type Props = {

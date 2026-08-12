@@ -5,7 +5,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Course, UserProgress } from "@prisma/client";
-import { upsertUserProgress } from "@/actions/user-progress";
+import { upsertUserProgress } from "@/actions/user/user-progress";
 
 import { Card } from "./card";
 

@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
-import { Promo } from "@/components/promo";
+import { Promo } from "@/components/study/promo";
 import { RadarChartClient } from "./radar-chart-client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";

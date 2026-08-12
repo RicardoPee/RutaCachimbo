@@ -1,5 +1,5 @@
-import { getDailyChallenge } from "@/actions/daily-challenge-actions";
-import { DailyChallengeCard } from "@/components/daily-challenge-card";
+import { getDailyChallenge } from "@/actions/game/daily-challenge-actions";
+import { DailyChallengeCard } from "@/components/study/daily-challenge-card";
 
 export async function DailyChallenge() {
   const data = await getDailyChallenge();

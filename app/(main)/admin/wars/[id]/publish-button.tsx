@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { publishTournamentResults } from "@/actions/tournament-actions";
+import { publishTournamentResults } from "@/actions/game/tournament-actions";
 import { toast } from "sonner";
 import { Trophy, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";

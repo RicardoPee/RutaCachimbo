@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { finishWeekAction } from "@/actions/leaderboard";
+import { finishWeekAction } from "@/actions/user/leaderboard";
 import { Loader2, CalendarCheck } from "lucide-react";
 
 export const FinishWeekButton = () => {

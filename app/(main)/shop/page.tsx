@@ -1,14 +1,14 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
-import { Promo } from "@/components/promo";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { Promo } from "@/components/study/promo";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 import { getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
 
 import { Items } from "./items";
-import { Quests } from "@/components/quests";
+import { Quests } from "@/components/study/quests";
 
 const ShopPage = async () => {
   const userProgressData = getUserProgress();

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { School, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { joinClassroom } from "@/actions/classrooms";
+import { joinClassroom } from "@/actions/classroom/classrooms";
 import { useRouter } from "next/navigation";
 
 export default function JoinClassroomPage() {

@@ -318,7 +318,7 @@ const UsersTab = ({ users }: { users: UserData[] }) => (
 
 // ─── Readings Tab ────────────────────────────────────────────────
 
-import { simplifyAndSaveReferenceText } from "@/actions/admin-actions";
+import { simplifyAndSaveReferenceText } from "@/actions/admin/admin-actions";
 import { toast } from "sonner";
 import { Loader2, Wand2 } from "lucide-react";
 

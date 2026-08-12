@@ -2,11 +2,11 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Trophy, CheckCircle2, Lock, Brain, Flame, Diamond, BookOpen, Crown } from "lucide-react";
 
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 import { getUserProgress, getUserSubscription } from "@/db/queries";
-import { Promo } from "@/components/promo";
+import { Promo } from "@/components/study/promo";
 
 const ACHIEVEMENTS = [
   { id: "perfect_score", title: "Cerebro Intocable", description: "Obtén un puntaje perfecto en un simulacro.", icon: Brain, color: "text-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/50" },

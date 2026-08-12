@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Edit2, Trash2, Save, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createFaction, updateFaction, deleteFaction } from "@/actions/faction-actions";
+import { createFaction, updateFaction, deleteFaction } from "@/actions/game/faction-actions";
 import { useRouter } from "next/navigation";
 
 export const FactionAdminClient = ({ initialFactions }: { initialFactions: any[] }) => {

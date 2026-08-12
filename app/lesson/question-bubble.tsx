@@ -1,4 +1,4 @@
-import { MascotAvatar } from "@/components/mascot-avatar";
+import { MascotAvatar } from "@/components/user/mascot-avatar";
 
 type Props = {
   question: string;

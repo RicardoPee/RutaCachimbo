@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { submitTeacherApplication } from "@/actions/teacher-applications";
+import { submitTeacherApplication } from "@/actions/admin/teacher-applications";
 
 export const ApplyForm = () => {
   const [proofUrl, setProofUrl] = useState("");

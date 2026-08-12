@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Swords, KeyRound, Flame, Trophy, Zap, ShieldAlert, Sparkles, Users, Award } from "lucide-react";
-import { createPvPLobby, joinPvPLobby } from "@/actions/pvp-actions";
+import { createPvPLobby, joinPvPLobby } from "@/actions/game/pvp-actions";
 
 export const PvpLobbyClient = () => {
   const [isCreating, setIsCreating] = useState(false);

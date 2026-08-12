@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { parsePdfWithAI, saveReviewedContent } from "@/actions/upload-pdf";
+import { parsePdfWithAI, saveReviewedContent } from "@/actions/admin/upload-pdf";
 import { Loader2, UploadCloud, CheckCircle2, XCircle, Trash2, CheckSquare, Sparkles } from "lucide-react";
 
 export const AdminUploadPdfButton = () => {

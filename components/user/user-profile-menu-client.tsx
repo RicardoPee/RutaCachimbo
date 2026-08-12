@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NotificationBell } from "./notification-bell";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 type Props = {
   userId: string;

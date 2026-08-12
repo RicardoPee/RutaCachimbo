@@ -8,7 +8,7 @@ import { isAdminId } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
 import { SidebarItem } from "./sidebar-item";
-import { UserProfileMenu } from "./user-profile-menu";
+import { UserProfileMenu } from "@/components/user/user-profile-menu";
 import {
   BookOpen,
   Swords,

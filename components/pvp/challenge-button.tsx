@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Swords, Loader2 } from "lucide-react";
-import { challengeUserPvp } from "@/actions/pvp-actions";
+import { challengeUserPvp } from "@/actions/game/pvp-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";

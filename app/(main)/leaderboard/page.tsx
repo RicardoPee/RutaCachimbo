@@ -2,13 +2,13 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
 import { getTopTenUsers, getUserProgress, getUserSubscription, getDynamicQuests } from "@/db/queries";
-import { Promo } from "@/components/promo";
-import { Quests } from "@/components/quests";
-import { LeaderboardClient } from "@/components/leaderboard-client";
+import { Promo } from "@/components/study/promo";
+import { Quests } from "@/components/study/quests";
+import { LeaderboardClient } from "@/components/leaderboard/leaderboard-client";
 
 const LearderboardPage = async () => {
   const { userId } = auth();

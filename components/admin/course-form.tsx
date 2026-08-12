@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { upsertCourse } from "@/actions/course-actions";
+import { upsertCourse } from "@/actions/admin/course-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, ArrowLeft, Image as ImageIcon, Trash } from "lucide-react";
@@ -120,7 +120,7 @@ export const CourseForm = ({ initialData }: CourseFormProps) => {
                     if (confirm("¿Estás seguro de que deseas eliminar este curso? Esto borrará todas las unidades, lecciones y preguntas asociadas.")) {
                       try {
                         setIsSaving(true);
-                        const { deleteCourse } = await import("@/actions/course-actions");
+                        const { deleteCourse } = await import("@/actions/admin/course-actions");
                         await deleteCourse(initialData.id!);
                         toast.success("Curso eliminado");
                         router.push("/admin/courses");

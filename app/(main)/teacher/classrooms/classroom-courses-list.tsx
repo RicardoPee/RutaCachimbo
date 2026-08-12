@@ -9,12 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createClassroomCourse } from "@/actions/classrooms";
+import { createClassroomCourse } from "@/actions/classroom/classrooms";
 import { 
   updateLessonTitle, deleteLesson, 
   updateChallengeText, deleteChallenge, 
   updateChallengeOptions 
-} from "@/actions/teacher-editor";
+} from "@/actions/admin/teacher-editor";
 import { UploadPdfButton } from "./upload-btn";
 
 type OptionData = {

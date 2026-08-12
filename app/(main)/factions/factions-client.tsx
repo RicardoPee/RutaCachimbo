@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Trophy, Clock, Users, Shield, Loader2 } from "lucide-react";
-import { joinFaction } from "@/actions/faction-actions";
-import { registerForTournament } from "@/actions/tournament-actions";
+import { joinFaction } from "@/actions/game/faction-actions";
+import { registerForTournament } from "@/actions/game/tournament-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { PublishButton } from "@/app/(main)/admin/wars/[id]/publish-button";

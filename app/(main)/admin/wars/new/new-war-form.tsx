@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createWarEvent } from "@/actions/tournament-actions";
+import { createWarEvent } from "@/actions/game/tournament-actions";
 import { toast } from "sonner";
 import { Swords, Save, Loader2, ArrowLeft, BookOpen } from "lucide-react";
 import Link from "next/link";

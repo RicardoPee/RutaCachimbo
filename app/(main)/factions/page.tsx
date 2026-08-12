@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { FactionsClient } from "./factions-client";
-import { syncTournaments } from "@/actions/tournament-actions";
+import { syncTournaments } from "@/actions/game/tournament-actions";
 import { isAdminId } from "@/lib/admin";
 
 export default async function FactionsPage() {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { upsertChallenge } from "@/actions/challenge-actions";
+import { upsertChallenge } from "@/actions/admin/challenge-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, ArrowLeft, Plus, Trash2, Trash } from "lucide-react";
@@ -271,7 +271,7 @@ export const ChallengeForm = ({ initialData, lessons }: ChallengeFormProps) => {
                   if (confirm("¿Estás seguro de que deseas eliminar este reto/pregunta?")) {
                     try {
                       setIsSaving(true);
-                      const { deleteChallenge } = await import("@/actions/challenge-actions");
+                      const { deleteChallenge } = await import("@/actions/admin/challenge-actions");
                       await deleteChallenge(initialData.id!);
                       toast.success("Reto eliminado");
                       router.push("/admin/challenges");

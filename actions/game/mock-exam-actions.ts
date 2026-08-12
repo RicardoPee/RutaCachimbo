@@ -7,7 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
-import { logMistake } from "@/actions/mistakes";
+import { logMistake } from "@/actions/user/mistakes";
 import { getUserProgress } from "@/db/queries";
 import { calculateNewStreak } from "@/lib/streak";
 import { checkAndUnlockAchievements } from "@/lib/achievements";

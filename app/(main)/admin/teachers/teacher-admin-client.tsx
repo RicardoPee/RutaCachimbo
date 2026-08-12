@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { approveApplication, rejectApplication } from "@/actions/teacher-applications";
+import { approveApplication, rejectApplication } from "@/actions/admin/teacher-applications";
 import { useRouter } from "next/navigation";
 
 export const TeacherAdminClient = ({ applications }: { applications: any[] }) => {

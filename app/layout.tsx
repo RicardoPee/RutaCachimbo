@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Bebas_Neue, Cinzel } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 

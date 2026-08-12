@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
 
-import { Promo } from "@/components/promo";
-import { Quests } from "@/components/quests";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { UserProgress } from "@/components/user-progress";
-import { StickyWrapper } from "@/components/sticky-wrapper";
-import { DidYouKnow } from "@/components/did-you-know";
-import { DailyChallenge } from "@/components/daily-challenge";
-import { ReviewSidebarCard } from "@/components/review-sidebar-card";
+import { Promo } from "@/components/study/promo";
+import { Quests } from "@/components/study/quests";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
+import { DidYouKnow } from "@/components/study/did-you-know";
+import { DailyChallenge } from "@/components/study/daily-challenge";
+import { ReviewSidebarCard } from "@/components/study/review-sidebar-card";
 import type { Lesson, Unit as UnitModel } from "@prisma/client";
 import { 
   getCourseProgress, 

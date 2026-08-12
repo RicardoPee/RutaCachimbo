@@ -8,7 +8,7 @@ import {
   HelpCircle, ExternalLink 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { parsePdfWithAI, saveReviewedContent } from "@/actions/upload-pdf";
+import { parsePdfWithAI, saveReviewedContent } from "@/actions/admin/upload-pdf";
 
 interface MediaFile {
   url: string;

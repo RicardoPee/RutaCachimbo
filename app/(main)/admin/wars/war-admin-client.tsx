@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Loader2, Calendar, Clock, Swords, Save, X, Sparkles, RefreshCw, Trash2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { createWarEvent } from "@/actions/tournament-actions";
-import { generateTournamentDraft, getReplacementLesson } from "@/actions/ai-tournament-actions";
+import { createWarEvent } from "@/actions/game/tournament-actions";
+import { generateTournamentDraft, getReplacementLesson } from "@/actions/game/ai-tournament-actions";
 import { useRouter } from "next/navigation";
 
 export const WarAdminClient = () => {

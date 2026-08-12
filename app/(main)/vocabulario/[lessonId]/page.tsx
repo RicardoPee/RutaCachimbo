@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import { getVocabulary } from "@/actions/vocab-actions";
+import { getVocabulary } from "@/actions/game/vocab-actions";
 import { getUserProgress } from "@/db/queries";
-import { FeedWrapper } from "@/components/feed-wrapper";
-import { StickyWrapper } from "@/components/sticky-wrapper";
-import { UserProgress } from "@/components/user-progress";
+import { FeedWrapper } from "@/components/layout/feed-wrapper";
+import { StickyWrapper } from "@/components/layout/sticky-wrapper";
+import { UserProgress } from "@/components/study/user-progress";
 import { VocabClient } from "./vocab-client";
 
 type Props = {

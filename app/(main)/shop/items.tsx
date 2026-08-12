@@ -6,14 +6,14 @@ import { useTransition, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { POINTS_TO_REFILL } from "@/constants";
-import { refillHearts } from "@/actions/user-progress";
-import { createStripeUrl } from "@/actions/user-subscription";
-import { buyStreakFreeze, buyXpBooster, buyBorder, equipBorder, buyTitle, equipTitle } from "@/actions/shop-actions";
-import { buyChest, openChest } from "@/actions/gacha-actions";
-import { buyPowerupCard, buyMascotSkin, equipMascotSkin } from "@/actions/powerup-actions";
+import { refillHearts } from "@/actions/user/user-progress";
+import { createStripeUrl } from "@/actions/user/user-subscription";
+import { buyStreakFreeze, buyXpBooster, buyBorder, equipBorder, buyTitle, equipTitle } from "@/actions/game/shop-actions";
+import { buyChest, openChest } from "@/actions/game/gacha-actions";
+import { buyPowerupCard, buyMascotSkin, equipMascotSkin } from "@/actions/user/powerup-actions";
 import { BORDERS_CATALOG, TITLES_CATALOG, getBorderStyles, getBorderDisplayName, getTitleById } from "@/lib/shop-catalog";
 import { MASCOT_SKINS_CATALOG, POWERUP_CARDS_CATALOG, getMascotSkinById } from "@/lib/powerups-catalog";
-import { MascotAvatar } from "@/components/mascot-avatar";
+import { MascotAvatar } from "@/components/user/mascot-avatar";
 import { 
   Zap, 
   Flame, 
